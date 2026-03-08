@@ -18,6 +18,8 @@ export interface FeatureItem {
 // Dashboard & Business Types
 export type UserRole = 'shipper' | 'carrier';
 
+export type SubscriptionPlan = 'free' | 'standard' | 'premium' | 'business';
+
 export interface User {
   id: string;
   email: string;
@@ -33,6 +35,7 @@ export interface User {
   address: string;
   createdAt: string;
   isVerified: boolean;
+  subscriptionPlan: SubscriptionPlan;
 }
 
 export interface Load {

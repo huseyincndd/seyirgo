@@ -11,7 +11,7 @@ import {
   ChevronRight, 
   Calendar, 
   MoreHorizontal,
-  Wallet,
+  Crown,
   Star,
   Clock,
   ArrowUpRight,
@@ -24,7 +24,7 @@ import {
 
 // --- MOCK DATA ---
 const STATS = [
-  { label: 'Aylık Kazanç', value: '₺84.500', change: '+%12', isPositive: true, icon: Wallet },
+  { label: 'Abonelik Paketim', value: 'Premium', change: 'Aktif', isPositive: true, icon: Crown },
   { label: 'Tamamlanan İş', value: '14', change: 'Bu ay', isPositive: true, icon: CheckCircle2 },
   { label: 'Toplam Mesafe', value: '8.240 km', change: 'Ort. 600km/iş', isPositive: true, icon: Navigation },
   { label: 'Sürücü Puanı', value: '4.9/5', change: 'Mükemmel', isPositive: true, icon: Star },
@@ -176,7 +176,7 @@ export default function CarrierDashboard() {
                           <div className="font-semibold text-slate-800">{ACTIVE_JOB.weight}</div>
                        </div>
                        <div>
-                          <div className="text-[10px] uppercase font-bold text-gray-400 mb-1">Kazanç</div>
+                          <div className="text-[10px] uppercase font-bold text-gray-400 mb-1">Anlaşma Tutarı</div>
                           <div className="font-bold text-green-600 text-lg">{ACTIVE_JOB.price}</div>
                        </div>
                        <div>
@@ -189,18 +189,18 @@ export default function CarrierDashboard() {
                  </div>
               </div>
 
-              {/* SECTION: EARNINGS CHART (CSS Only - Minimal) */}
+              {/* SECTION: WEEKLY SUMMARY */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                  <div className="bg-brand-dark rounded-2xl p-6 text-white relative overflow-hidden flex flex-col justify-between min-h-[220px]">
                     <div className="absolute top-0 right-0 w-40 h-40 bg-brand-accent/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
                     
                     <div className="relative z-10">
                        <div className="flex items-center gap-2 mb-2">
-                          <Wallet size={18} className="text-brand-orange" />
-                          <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Net Bakiye</span>
+                          <TrendingUp size={18} className="text-brand-orange" />
+                          <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Bu Haftanın Özeti</span>
                        </div>
-                       <div className="text-4xl font-black tracking-tight mb-1">₺24.750</div>
-                       <div className="text-sm text-gray-400">Önümüzdeki hakediş: 12 Şubat</div>
+                       <div className="text-4xl font-black tracking-tight mb-1">14 İş</div>
+                       <div className="text-sm text-gray-400">Toplam 6,820 km yol katettiniz</div>
                     </div>
 
                     <div className="relative z-10 mt-6">

@@ -14,7 +14,7 @@ import {
   ChevronRight,
   MapPin,
   Calendar,
-  Wallet,
+  Crown,
   Bell,
   Star,
   Navigation,
@@ -28,7 +28,7 @@ const STATS = [
   { label: 'Aktif İlan', value: '3', change: '2 Beklemede', isPositive: true, icon: Package },
   { label: 'Gelen Teklifler', value: '12', change: '5 Yeni', isPositive: true, icon: FileText },
   { label: 'Yoldaki Yük', value: '1', change: 'Tahmini: 2s', isPositive: true, icon: Truck },
-  { label: 'Toplam Harcama', value: '₺42.500', change: 'Bu Ay', isPositive: false, icon: Wallet },
+  { label: 'Abonelik Paketim', value: 'Premium', change: 'Aktif', isPositive: true, icon: Crown },
 ];
 
 const ACTIVE_SHIPMENT = {

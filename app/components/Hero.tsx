@@ -1,45 +1,107 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { 
   Truck, Package, MapPin, ArrowRight, Home, Car, Bike, Ship, Construction, Warehouse, 
-  Circle, CheckCircle2, ChevronRight, PackageCheck, ArrowLeft, Info, Play
+  Circle, CheckCircle2, ChevronRight, PackageCheck, ArrowLeft, Info, Play, FileText
 } from 'lucide-react';
 
 type UserType = 'shipper' | 'carrier';
-type CategoryId = 'road' | 'moving' | 'vehicle' | 'courier' | 'intermodal' | 'project' | 'storage';
+type CategoryId = '1A' | '1B' | '1C' | '1D' | '1E' | '1F' | '1G';
 
 interface Category {
   id: CategoryId;
-  label: string;
+  code: string;
+  shortLabel: string;
+  shipperLabel: string;
+  carrierLabel: string;
+  shipperCode: string;
+  carrierCode: string;
   icon: any;
 }
 
+// KARAYOLU KATEGORİLERİ
 const CATEGORIES: Category[] = [
-  { id: 'road', label: 'Tır/Kamyon', icon: Truck },
-  { id: 'moving', label: 'Evden Eve', icon: Home },
-  { id: 'vehicle', label: 'Oto Çekici', icon: Car },
-  { id: 'courier', label: 'Moto Kurye', icon: Bike },
-  { id: 'intermodal', label: 'Deniz/Hava', icon: Ship },
-  { id: 'project', label: 'Proje Yükü', icon: Construction },
-  { id: 'storage', label: 'Depolama', icon: Warehouse },
+  { 
+    id: '1A', 
+    code: '1A/1AA',
+    shortLabel: 'Karayolu',
+    shipperLabel: 'Karayolu Yüküm Var / Karayolu Aracı Arıyorum',
+    carrierLabel: 'Karayolu Aracım Var / Karayolu Yük Arıyorum',
+    shipperCode: '1A',
+    carrierCode: '1AA',
+    icon: Truck 
+  },
+  { 
+    id: '1B', 
+    code: '1B/1BB',
+    shortLabel: 'Ev/Ofis',
+    shipperLabel: 'Ev / Ofis Eşyam Var / Araç Arıyorum',
+    carrierLabel: 'Aracım Var / Ev-Ofis Eşyası Taşıyabilirim',
+    shipperCode: '1B',
+    carrierCode: '1BB',
+    icon: Home 
+  },
+  { 
+    id: '1C', 
+    code: '1C/1CC',
+    shortLabel: 'Araç Taşıma',
+    shipperLabel: 'Taşınacak Küçük veya Büyük Aracım Var / Taşıyıcı (Çekici) Arıyorum',
+    carrierLabel: 'Küçük ve Büyük Araçları Taşıyacak Aracım ve Çekicim Var / Taşınacak Araç Arıyorum',
+    shipperCode: '1C',
+    carrierCode: '1CC',
+    icon: Car 
+  },
+  { 
+    id: '1D', 
+    code: '1D/1DD',
+    shortLabel: 'Kurye',
+    shipperLabel: 'Parsiyel Kargolanacak Evrak ve Eşyam Var / Kurye Firması Arıyorum',
+    carrierLabel: 'Kurye Firmam Var / Parsiyel Evrak ve Eşya Taşıyabilirim',
+    shipperCode: '1D',
+    carrierCode: '1DD',
+    icon: FileText 
+  },
+  { 
+    id: '1E', 
+    code: '1E/1EE',
+    shortLabel: 'Intermodal',
+    shipperLabel: 'Intermodal Yüküm Var (Kara-Deniz-Hava-Demiryolu) / Araç Arıyorum',
+    carrierLabel: 'Intermodal Taşıma Yapıyorum (Kara-Deniz-Hava-Demiryolu) / Yük Arıyorum',
+    shipperCode: '1E',
+    carrierCode: '1EE',
+    icon: Ship 
+  },
+  { 
+    id: '1F', 
+    code: '1F/1FF',
+    shortLabel: 'Proje',
+    shipperLabel: 'Proje Taşımacılığı Yüküm Var / Taşıyıcı Arıyorum',
+    carrierLabel: 'Projeli Taşıma Yapabilirim / Yük Arıyorum',
+    shipperCode: '1F',
+    carrierCode: '1FF',
+    icon: Construction 
+  },
+  { 
+    id: '1G', 
+    code: '1G/1GG',
+    shortLabel: 'Depolama',
+    shipperLabel: 'Depolanacak Eşyam Var / Antrepo veya Depo Arıyorum',
+    carrierLabel: 'Antrepo ve Depom Var / Eşya Depolamak İsteyen Firma Arıyorum',
+    shipperCode: '1G',
+    carrierCode: '1GG',
+    icon: Warehouse 
+  },
 ];
 
 const Hero: React.FC = () => {
   const [step, setStep] = useState<0 | 1>(0); // 0: Selection, 1: Form
   const [activeTab, setActiveTab] = useState<UserType>('shipper');
-  const [selectedCategory, setSelectedCategory] = useState<CategoryId>('road');
-  const [isExiting, setIsExiting] = useState(false); // Controls the exit animation of step 0
-
-  // Handle Initial Selection with Smooth Exit Animation
+  const [selectedCategory, setSelectedCategory] = useState<CategoryId>('1A');
+  // Handle Initial Selection
   const handleSelection = (type: UserType) => {
-    setIsExiting(true); // Trigger exit animation
-    
-    // Wait for exit animation to complete before switching state
-    setTimeout(() => {
-        setActiveTab(type);
-        setStep(1);
-        setIsExiting(false);
-    }, 400); // Matches the duration-300 + little buffer
+      setActiveTab(type);
+      setStep(1);
   };
 
   // Handle Back
@@ -70,28 +132,32 @@ const Hero: React.FC = () => {
       {/* Main Container */}
       <div className="container mx-auto px-4 md:px-8 lg:px-12 relative z-10 w-full h-full flex flex-col justify-center pt-24 pb-12">
         
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-0 items-center lg:items-stretch w-full">
           
-          {/* --- LEFT SIDE: TEXT CONTENT --- */}
-          <div className="lg:col-span-7 space-y-6 lg:space-y-8 text-center lg:text-left">
-             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full shadow-sm mx-auto lg:mx-0">
-                <span className={`w-2 h-2 rounded-full animate-pulse ${step === 1 && !isShipper ? 'bg-brand-orange' : 'bg-brand-accent'}`}></span>
+          {/* --- LEFT SIDE: TEXT CONTENT (Slogan) --- */}
+          <div className={`flex flex-col justify-center space-y-6 lg:space-y-8 text-center lg:text-left transition-all duration-700 ease-in-out overflow-hidden ${
+              step === 0 
+                ? 'w-full lg:w-7/12 opacity-100 lg:pr-20' 
+                : 'w-full lg:w-0 opacity-0 lg:p-0 h-0 lg:h-auto'
+          }`}>
+             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-full shadow-sm mx-auto lg:mx-0 whitespace-nowrap">
+                <span className={`w-2 h-2 rounded-full animate-pulse bg-brand-accent`}></span>
                 <span className="text-[11px] font-bold tracking-widest uppercase text-brand-dark">Lojistiğin Yeni Yüzyılı</span>
              </div>
 
-             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight text-brand-dark">
+             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black leading-[1.1] tracking-tight text-brand-dark whitespace-nowrap">
                Yükünüz İçin <br />
-               <span className={`text-transparent bg-clip-text bg-gradient-to-r ${step === 1 && !isShipper ? 'from-brand-orange to-yellow-500' : 'from-brand-accent to-brand-light'}`}>
+               <span className={`text-transparent bg-clip-text bg-gradient-to-r from-brand-accent to-brand-light`}>
                  Akıllı Rota.
                </span>
              </h1>
              
-             <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto lg:mx-0 font-medium leading-relaxed">
+             <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto lg:mx-0 font-medium leading-relaxed min-w-[500px]">
                SeyirGo, yapay zeka destekli altyapısıyla yük verenleri ve taşıyıcıları saniyeler içinde buluşturur. 
                Endüstriyel taşımacılıktan bireysel lojistiğe, <span className="text-brand-dark font-bold underline decoration-brand-accent decoration-2 underline-offset-4">güvenle taşıyoruz.</span>
              </p>
 
-             <div className="hidden md:flex items-center gap-8 pt-6 opacity-80 justify-center lg:justify-start">
+             <div className="hidden md:flex items-center gap-8 pt-6 opacity-80 justify-center lg:justify-start min-w-[500px]">
                 <div className="flex flex-col">
                     <span className="text-3xl font-bold text-brand-dark">12K+</span>
                     <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Operasyon</span>
@@ -104,20 +170,17 @@ const Hero: React.FC = () => {
              </div>
           </div>
 
-          {/* --- RIGHT SIDE: INTERACTIVE CARD --- */}
-          <div className="lg:col-span-5 w-full">
-            <div className={`bg-white rounded-[2rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.15)] border border-gray-100 relative overflow-hidden transition-all duration-500 ease-out flex flex-col ${step === 0 ? 'min-h-[550px]' : 'min-h-[500px]'}`}>
-               
-               {/* STEP 0: SELECTION SCREEN */}
-               {step === 0 && (
-                 <div 
-                    className={`p-6 flex flex-col h-full transition-all duration-300 ease-in-out transform ${
-                        isExiting 
-                        ? 'opacity-0 -translate-x-10 scale-95 blur-sm' // EXIT ANIMATION
-                        : 'opacity-100 translate-x-0 scale-100 blur-0 animate-in fade-in zoom-in-95 duration-500' // ENTRY ANIMATION
-                    }`}
-                 >
-                    <div className="mb-6 text-center">
+          {/* --- MIDDLE: WELCOME BOX (Moves Left) --- */}
+          <div className={`transition-all duration-700 ease-in-out flex flex-col justify-center ${
+              step === 0 
+                ? 'w-full lg:w-5/12'
+                : 'w-full lg:w-3/12'
+          }`}>
+             <div className={`bg-white rounded-[2rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.15)] border border-gray-100 relative overflow-hidden flex flex-col h-[580px] transition-all duration-500`}>
+                  <div className="p-6 flex flex-col h-full">
+                    {/* Header showing current state when collapsed/selected */}
+
+                    <div className={`mb-6 text-center transition-all duration-300 ${step === 1 ? 'scale-90 opacity-80' : ''}`}>
                        <h3 className="text-2xl font-black text-brand-dark tracking-tight">Hoş Geldiniz</h3>
                        <p className="text-gray-400 text-sm mt-1">İşlem türünüzü seçerek hemen başlayın.</p>
                     </div>
@@ -127,36 +190,25 @@ const Hero: React.FC = () => {
                        {/* Shipper Button */}
                        <button 
                           onClick={() => handleSelection('shipper')}
-                          className="group relative w-full h-36 md:h-52 rounded-3xl overflow-hidden shadow-lg hover:shadow-brand-dark/30 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98]"
+                          className={`group relative w-full h-full rounded-3xl overflow-hidden shadow-lg transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] ${
+                              step === 1 && activeTab !== 'shipper' ? 'opacity-50 grayscale hover:opacity-100 hover:grayscale-0' : ''
+                          } ${step === 1 && activeTab === 'shipper' ? 'ring-4 ring-brand-accent ring-offset-2' : ''}`}
                        >
-                          {/* Image Background */}
                           <img 
                             src="https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&q=80"
                             alt="Yüküm Var"
                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                           />
-                          
-                          {/* Gradient Overlay */}
                           <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-blue-950/90 to-blue-900/40 mix-blend-multiply opacity-90 group-hover:opacity-100 transition-opacity duration-300"></div>
                           
-                          {/* Decorative Icon */}
-                          <div className="absolute -right-8 -bottom-8 text-white opacity-5 transform rotate-12 group-hover:rotate-0 group-hover:scale-110 transition-all duration-500">
-                             <PackageCheck size={160} />
-                          </div>
-
-                          <div className="relative z-10 flex flex-col justify-center h-full px-8 text-left">
-                             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm w-fit px-3 py-1 rounded-full text-[10px] font-bold text-blue-50 mb-2 border border-white/10 shadow-sm">
+                          <div className={`relative z-10 flex flex-col justify-center h-full px-6 text-left ${step === 1 ? 'items-center text-center' : ''}`}>
+                             <div className={`inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm w-fit px-3 py-1 rounded-full text-[10px] font-bold text-blue-50 mb-2 border border-white/10 shadow-sm ${step === 1 ? 'hidden' : ''}`}>
                                 <span className="w-1.5 h-1.5 rounded-full bg-blue-300 animate-pulse"></span>
                                 HIZLI TEKLİF AL
                              </div>
-                             <div className="flex items-center justify-between mt-1">
-                                 <div>
-                                     <span className="block text-3xl md:text-4xl font-black text-white tracking-tight drop-shadow-sm">YÜKÜM VAR</span>
-                                     <span className="text-gray-200 text-sm font-medium mt-1 block max-w-[200px] leading-tight opacity-90">Uygun araç bul, yükünü güvenle taşıt.</span>
-                                 </div>
-                                 <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-white backdrop-blur-md border border-white/10 group-hover:bg-white group-hover:text-brand-dark transition-all">
-                                     <ArrowRight size={24} />
-                                 </div>
+                             <div>
+                                 <span className="block text-3xl md:text-3xl font-black text-white tracking-tight drop-shadow-sm">YÜKÜM VAR</span>
+                                 <span className={`text-gray-200 text-xs font-medium mt-1 block leading-tight opacity-90 ${step === 1 ? 'hidden' : ''}`}>Uygun araç bul, yükünü güvenle taşıt.</span>
                              </div>
                           </div>
                        </button>
@@ -164,40 +216,28 @@ const Hero: React.FC = () => {
                        {/* Carrier Button */}
                        <button 
                           onClick={() => handleSelection('carrier')}
-                          className="group relative w-full h-36 md:h-52 rounded-3xl overflow-hidden shadow-lg hover:shadow-orange-900/30 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98]"
+                          className={`group relative w-full h-full rounded-3xl overflow-hidden shadow-lg transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] ${
+                              step === 1 && activeTab !== 'carrier' ? 'opacity-50 grayscale hover:opacity-100 hover:grayscale-0' : ''
+                          } ${step === 1 && activeTab === 'carrier' ? 'ring-4 ring-brand-orange ring-offset-2' : ''}`}
                        >
-                          {/* Image Background */}
                           <img 
                             src="https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80"
                             alt="Aracım Var"
                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                           />
-
-                          {/* Gradient Overlay */}
                           <div className="absolute inset-0 bg-gradient-to-r from-orange-950 via-amber-900/90 to-amber-700/40 mix-blend-multiply opacity-90 group-hover:opacity-100 transition-opacity duration-300"></div>
                           
-                          {/* Decorative Icon */}
-                          <div className="absolute -right-8 -bottom-8 text-white opacity-5 transform rotate-12 group-hover:rotate-0 group-hover:scale-110 transition-all duration-500">
-                             <Truck size={160} />
-                          </div>
-
-                          <div className="relative z-10 flex flex-col justify-center h-full px-8 text-left">
-                             <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm w-fit px-3 py-1 rounded-full text-[10px] font-bold text-orange-50 mb-2 border border-white/10 shadow-sm">
+                          <div className={`relative z-10 flex flex-col justify-center h-full px-6 text-left ${step === 1 ? 'items-center text-center' : ''}`}>
+                             <div className={`inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm w-fit px-3 py-1 rounded-full text-[10px] font-bold text-orange-50 mb-2 border border-white/10 shadow-sm ${step === 1 ? 'hidden' : ''}`}>
                                 <span className="w-1.5 h-1.5 rounded-full bg-orange-200 animate-pulse"></span>
                                 KOMİSYONSUZ
                              </div>
-                             <div className="flex items-center justify-between mt-1">
-                                 <div>
-                                     <span className="block text-3xl md:text-4xl font-black text-white tracking-tight drop-shadow-sm">ARACIM VAR</span>
-                                     <span className="text-gray-200 text-sm font-medium mt-1 block max-w-[200px] leading-tight opacity-90">Yük bul, boş dönme, hemen kazan.</span>
-                                 </div>
-                                 <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center text-white backdrop-blur-md border border-white/10 group-hover:bg-white group-hover:text-brand-orange transition-all">
-                                     <ArrowRight size={24} />
-                                 </div>
+                             <div>
+                                 <span className="block text-3xl md:text-3xl font-black text-white tracking-tight drop-shadow-sm">ARACIM VAR</span>
+                                 <span className={`text-gray-200 text-xs font-medium mt-1 block leading-tight opacity-90 ${step === 1 ? 'hidden' : ''}`}>Yük bul, boş dönme, hemen kazan.</span>
                              </div>
                           </div>
                        </button>
-
                     </div>
 
                     <div className="mt-6 flex items-center justify-center gap-2 text-gray-400 text-[10px] uppercase font-bold tracking-wider opacity-60">
@@ -205,121 +245,92 @@ const Hero: React.FC = () => {
                        30 Saniyede Ücretsiz İşlem
                     </div>
                  </div>
-               )}
-
-               {/* STEP 1: FORM SCREEN (Staggered Animation) */}
-               {step === 1 && (
-                 <div className="flex flex-col h-full overflow-hidden">
-                    
-                    {/* Header - Stagger 1 */}
-                    <div 
-                        className="p-6 pb-2 flex items-center justify-between animate-[slideInRight_0.5s_ease-out_forwards] opacity-0"
-                        style={{ animationDelay: '0ms' }}
-                    >
-                       <button 
-                         onClick={handleBack}
-                         className="flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-gray-800 transition-colors p-2 -ml-2 rounded-lg hover:bg-gray-50 group"
-                       >
-                         <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> Seçime Dön
-                       </button>
-                       <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-opacity-10 animate-in zoom-in duration-300 ${isShipper ? 'bg-brand-dark text-brand-dark' : 'bg-brand-orange text-brand-orange'}`}>
-                         {isShipper ? 'Yük Veren' : 'Yük Taşıyan'}
-                       </span>
-                    </div>
-
-                    {/* Content */}
-                    <div className="px-6 md:px-8 py-2 flex-1 flex flex-col gap-6">
-                       
-                       {/* Categories Grid - Stagger 2 */}
-                       <div className="animate-[slideInRight_0.5s_ease-out_forwards] opacity-0" style={{ animationDelay: '100ms' }}>
-                          <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-                             {isShipper ? 'Ne Taşıyacağız?' : 'Araç Tipiniz'}
-                          </label>
-                          <div className="grid grid-cols-4 gap-2">
-                             {CATEGORIES.map((cat) => {
-                                const isSelected = selectedCategory === cat.id;
-                                return (
-                                   <button
-                                      key={cat.id}
-                                      onClick={() => setSelectedCategory(cat.id)}
-                                      className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all duration-200 h-[80px] ${
-                                         isSelected 
-                                           ? `${isShipper ? 'border-brand-dark bg-blue-50/50 text-brand-dark' : 'border-brand-orange bg-orange-50/50 text-brand-orange'} shadow-sm ring-1 ${isShipper ? 'ring-brand-dark' : 'ring-brand-orange'} scale-105` 
-                                           : 'border-transparent bg-gray-50 text-gray-400 hover:bg-gray-100 hover:scale-105'
-                                      }`}
-                                   >
-                                      <cat.icon size={20} strokeWidth={isSelected ? 2.5 : 2} className="mb-1.5" />
-                                      <span className="text-[9px] font-bold text-center leading-tight">{cat.label}</span>
-                                   </button>
-                                )
-                             })}
-                          </div>
-                       </div>
-
-                       {/* Inputs - Stagger 3 */}
-                       <div className="relative animate-[slideInRight_0.5s_ease-out_forwards] opacity-0" style={{ animationDelay: '200ms' }}>
-                          {selectedCategory !== 'storage' && (
-                             <div className="absolute left-[20px] top-[28px] bottom-[28px] w-[2px] border-l-2 border-dashed border-gray-200 z-0"></div>
-                          )}
-
-                          <div className={`space-y-3`}>
-                             {/* From */}
-                             <div className={`relative bg-gray-50 rounded-xl px-4 py-3 flex items-center transition-all ring-1 ring-transparent ${themeRing}`}>
-                                <div className={`w-3 h-3 rounded-full shrink-0 mr-4 ring-2 ring-white shadow-sm ${isShipper ? 'bg-brand-accent' : 'bg-brand-orange'}`}></div>
-                                <div className="flex-1">
-                                   <label className="block text-[9px] font-bold text-gray-400 uppercase">Nereden</label>
-                                   <input type="text" placeholder="İl, İlçe..." className="w-full bg-transparent text-sm font-bold text-gray-800 placeholder:text-gray-300 focus:outline-none" />
-                                </div>
-                             </div>
-
-                             {/* To */}
-                             {selectedCategory !== 'storage' && (
-                                 <div className={`relative bg-gray-50 rounded-xl px-4 py-3 flex items-center transition-all ring-1 ring-transparent ${themeRing}`}>
-                                    <div className="w-3 h-3 rounded-full bg-brand-dark shrink-0 mr-4 ring-2 ring-white shadow-sm"></div>
-                                    <div className="flex-1">
-                                       <label className="block text-[9px] font-bold text-gray-400 uppercase">Nereye</label>
-                                       <input type="text" placeholder="İl, İlçe..." className="w-full bg-transparent text-sm font-bold text-gray-800 placeholder:text-gray-300 focus:outline-none" />
-                                    </div>
-                                 </div>
-                             )}
-                          </div>
-                       </div>
-
-                       {/* Action Button - Stagger 4 */}
-                       <div className="mt-auto animate-[slideInUp_0.6s_ease-out_forwards] opacity-0" style={{ animationDelay: '300ms' }}>
-                           <button className={`w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-3 transition-transform hover:-translate-y-0.5 active:scale-[0.98] ${themeBg}`}>
-                              {isShipper ? 'Fiyat Hesapla' : 'Yükleri Gör'}
-                              <ArrowRight size={20} />
-                           </button>
-                       </div>
-
-                    </div>
-                    
-                    {/* Bottom Info - Stagger 5 */}
-                    <div className="px-8 pb-6 pt-2 text-center animate-in fade-in duration-700 delay-500 fill-mode-backwards">
-                       <p className="text-[10px] text-gray-400 flex items-center justify-center gap-1">
-                          <Info size={12} />
-                          <span>Devam ederek <a href="#" className="underline">Hizmet Şartları</a>'nı kabul edersiniz.</span>
-                       </p>
-                    </div>
-
-                    {/* Custom Keyframes for Tailwind (Injecting style for cleaner component) */}
-                    <style>{`
-                        @keyframes slideInRight {
-                            from { transform: translateX(50px); opacity: 0; }
-                            to { transform: translateX(0); opacity: 1; }
-                        }
-                        @keyframes slideInUp {
-                            from { transform: translateY(20px); opacity: 0; }
-                            to { transform: translateY(0); opacity: 1; }
-                        }
-                    `}</style>
-
-                 </div>
-               )}
-
-            </div>
+             </div>
           </div>
+
+          {/* --- RIGHT SIDE: CATEGORIES / FORM (Expands) --- */}
+          {step === 1 && (
+            <div className={`flex flex-col justify-center transition-all duration-700 ease-in-out pl-8 animate-[slideInRight_0.7s_ease-out_forwards] ${
+               step === 1 ? 'w-full lg:w-9/12 opacity-100' : 'w-0 opacity-0 overflow-hidden'
+            }`}>
+                 <div className="bg-white rounded-[2rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden flex flex-col h-[580px]">
+                     
+                     {/* Header */}
+                     <div className="p-6 pb-2 flex items-center justify-between border-b border-gray-50">
+                        <button 
+                          onClick={handleBack}
+                          className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-brand-dark transition-colors p-2 -ml-2 rounded-lg hover:bg-gray-50 group"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-hover:border-gray-200">
+                             <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" /> 
+                          </div>
+                          <span>Seçime Dön</span>
+                        </button>
+                        <span className={`text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full bg-opacity-10 animate-in zoom-in duration-300 ${isShipper ? 'bg-brand-dark text-brand-dark' : 'bg-brand-orange text-brand-orange'}`}>
+                          {isShipper ? 'Yük Veren' : 'Yük Taşıyan'}
+                        </span>
+                     </div>
+
+                     {/* Scrollable Content */}
+                     <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 flex flex-col">
+                        <div className="flex-1 flex flex-col gap-8">
+                           
+                           {/* STEP Title */}
+                           <div>
+                              <h2 className="text-2xl font-bold text-gray-800 mb-2">Kategorinizi Seçin</h2>
+                              <p className="text-gray-500 text-sm">Size en uygun taşıma tipini belirleyin.</p>
+                           </div>
+
+                           {/* Categories Grid - Adjusted to show all */}
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4">
+                              {CATEGORIES.map((cat, index) => {
+                                 const isSelected = selectedCategory === cat.id;
+                                 const categoryCode = isShipper ? cat.shipperCode : cat.carrierCode;
+                                 const categoryLabel = isShipper ? cat.shipperLabel : cat.carrierLabel;
+                                 return (
+                                    <button
+                                       key={cat.id}
+                                       onClick={() => setSelectedCategory(cat.id)}
+                                       className={`flex items-start gap-3 p-4 rounded-2xl border text-left transition-all duration-200 group hover:shadow-md ${
+                                          isSelected 
+                                            ? `${isShipper ? 'border-brand-dark bg-blue-50/50 ring-1 ring-brand-dark' : 'border-brand-orange bg-orange-50/50 ring-1 ring-brand-orange'} shadow-sm` 
+                                            : 'border-gray-100 bg-white hover:border-gray-300'
+                                       }`}
+                                       style={{ animationDelay: `${index * 50}ms` }}
+                                    >
+                                       <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                                          isSelected
+                                            ? (isShipper ? 'bg-brand-dark text-white' : 'bg-brand-orange text-white')
+                                            : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
+                                       }`}>
+                                          <cat.icon size={18} />
+                                       </div>
+                                       <div>
+                                          <span className={`block text-xs font-bold mb-1 opacity-70 ${isSelected ? (isShipper ? 'text-brand-dark' : 'text-brand-orange') : 'text-gray-400'}`}>
+                                             {categoryCode}
+                                          </span>
+                                          <span className={`text-sm font-semibold leading-tight block ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
+                                             {categoryLabel}
+                                          </span>
+                                       </div>
+                                    </button>
+                                 )
+                              })}
+                           </div>
+
+                        </div>
+                        
+                        {/* Action Button - Moved to bottom of flex container but inside padding */}
+                        <div className={`pt-4 border-t border-gray-100 animate-in slide-in-from-bottom-4 duration-500 mt-auto`}>
+                          <Link href="/giris" className={`w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-3 transition-transform hover:-translate-y-0.5 active:scale-[0.98] ${themeBg}`}>
+                              Devam Et
+                              <ArrowRight size={20} />
+                          </Link>
+                       </div>
+                     </div>
+                 </div>
+            </div>
+          )}
 
         </div>
 
