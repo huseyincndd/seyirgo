@@ -102,6 +102,16 @@ const Hero: React.FC = () => {
   const handleSelection = (type: UserType) => {
       setActiveTab(type);
       setStep(1);
+      
+      // Mobilde seçim yapınca aşağıya kaydırma işlemi
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+        setTimeout(() => {
+          const element = document.getElementById('categories-section');
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      }
   };
 
   // Handle Back
@@ -250,13 +260,13 @@ const Hero: React.FC = () => {
 
           {/* --- RIGHT SIDE: CATEGORIES / FORM (Expands) --- */}
           {step === 1 && (
-            <div className={`flex flex-col justify-center transition-all duration-700 ease-in-out pl-8 animate-[slideInRight_0.7s_ease-out_forwards] ${
-               step === 1 ? 'w-full lg:w-9/12 opacity-100' : 'w-0 opacity-0 overflow-hidden'
+            <div id="categories-section" className={`flex flex-col justify-center transition-all duration-700 ease-in-out lg:pl-8 animate-[slideInRight_0.4s_ease-out_forwards] ${
+               step === 1 ? 'w-full lg:w-9/12 opacity-100 mt-4 lg:mt-0' : 'w-0 opacity-0 overflow-hidden'
             }`}>
-                 <div className="bg-white rounded-[2rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden flex flex-col h-[580px]">
+                 <div className="bg-white rounded-[2rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden flex flex-col h-[70vh] min-h-[500px] lg:h-[580px] w-full relative">
                      
                      {/* Header */}
-                     <div className="p-6 pb-2 flex items-center justify-between border-b border-gray-50">
+                     <div className="p-5 lg:p-6 flex items-center justify-between border-b border-gray-50 bg-white z-10 flex-none shrink-0">
                         <button 
                           onClick={handleBack}
                           className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-brand-dark transition-colors p-2 -ml-2 rounded-lg hover:bg-gray-50 group"
@@ -272,8 +282,8 @@ const Hero: React.FC = () => {
                      </div>
 
                      {/* Scrollable Content */}
-                     <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8 flex flex-col">
-                        <div className="flex-1 flex flex-col gap-8">
+                     <div className="flex-1 overflow-y-auto custom-scrollbar p-5 lg:p-8 flex flex-col bg-gray-50/30">
+                        <div className="flex-1 flex flex-col gap-6 lg:gap-8 pb-4">
                            
                            {/* STEP Title */}
                            <div>
@@ -317,16 +327,17 @@ const Hero: React.FC = () => {
                                  )
                               })}
                            </div>
-
                         </div>
-                        
-                        {/* Action Button - Moved to bottom of flex container but inside padding */}
-                        <div className={`pt-4 border-t border-gray-100 animate-in slide-in-from-bottom-4 duration-500 mt-auto`}>
+                     </div>
+                     
+                     {/* Action Button - Sticky Bottom */}
+                     <div className="p-5 lg:p-6 border-t border-gray-100 bg-white z-20 flex-none shrink-0 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
+                        <div className={`animate-in slide-in-from-bottom-4 duration-500`}>
                           <Link href="/giris" className={`w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-3 transition-transform hover:-translate-y-0.5 active:scale-[0.98] ${themeBg}`}>
                               Devam Et
                               <ArrowRight size={20} />
                           </Link>
-                       </div>
+                        </div>
                      </div>
                  </div>
             </div>
