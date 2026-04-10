@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { LucideIcon, Plus, FileText, Truck, ChevronRight, Route, Package } from 'lucide-react';
+import { LucideIcon, Plus, FileText, Truck, ChevronRight, Megaphone, Package } from 'lucide-react';
 
 interface QuickAction {
   label: string;
@@ -40,15 +40,15 @@ const SHIPPER_ACTIONS: QuickAction[] = [
 
 const CARRIER_ACTIONS: QuickAction[] = [
   { 
-    label: 'Rota Ekle', 
-    description: 'Yeni rota oluştur, yük bul',
-    href: '/carrier/rota-ekle',
-    icon: Plus,
+    label: 'İlan Ver', 
+    description: 'Yeni taşıyıcı ilanı oluştur',
+    href: '/carrier/ilan-ekle',
+    icon: Megaphone,
     color: 'orange'
   },
   { 
     label: 'Uygun Yükler', 
-    description: 'Rotalarına eşleşen yükleri gör',
+    description: 'İlanlarınıza eşleşen yükleri gör',
     href: '/carrier/uygun-yukler',
     icon: Package,
     color: 'purple'

@@ -72,7 +72,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Onboarding Tour */}
-      <DashboardOnboarding userType={userType} />
+      {/* <DashboardOnboarding userType={userType} /> */}
     </>
   );
 }

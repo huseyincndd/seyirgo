@@ -186,8 +186,8 @@ const Hero: React.FC = () => {
                 ? 'w-full lg:w-5/12'
                 : 'w-full lg:w-3/12'
           }`}>
-             <div className={`bg-white rounded-[2rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.15)] border border-gray-100 relative overflow-hidden flex flex-col h-[580px] transition-all duration-500`}>
-                  <div className="p-6 flex flex-col h-full">
+             <div className={`bg-white rounded-[2rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.15)] border border-gray-100 relative overflow-hidden flex flex-col h-[600px] lg:h-[640px] transition-all duration-500`}>
+                  <div className="p-5 lg:p-6 flex flex-col h-full">
                     {/* Header showing current state when collapsed/selected */}
 
                     <div className={`mb-6 text-center transition-all duration-300 ${step === 1 ? 'scale-90 opacity-80' : ''}`}>
@@ -263,10 +263,10 @@ const Hero: React.FC = () => {
             <div id="categories-section" className={`flex flex-col justify-center transition-all duration-700 ease-in-out lg:pl-8 animate-[slideInRight_0.4s_ease-out_forwards] ${
                step === 1 ? 'w-full lg:w-9/12 opacity-100 mt-4 lg:mt-0' : 'w-0 opacity-0 overflow-hidden'
             }`}>
-                 <div className="bg-white rounded-[2rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden flex flex-col h-[70vh] min-h-[500px] lg:h-[580px] w-full relative">
+                 <div className="bg-white rounded-[2rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.15)] border border-gray-100 overflow-hidden flex flex-col h-auto lg:h-[640px] w-full relative">
                      
                      {/* Header */}
-                     <div className="p-5 lg:p-6 flex items-center justify-between border-b border-gray-50 bg-white z-10 flex-none shrink-0">
+                     <div className="p-4 lg:p-5 flex items-center justify-between border-b border-gray-50 bg-white z-10 flex-none shrink-0">
                         <button 
                           onClick={handleBack}
                           className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-brand-dark transition-colors p-2 -ml-2 rounded-lg hover:bg-gray-50 group"
@@ -282,17 +282,17 @@ const Hero: React.FC = () => {
                      </div>
 
                      {/* Scrollable Content */}
-                     <div className="flex-1 overflow-y-auto custom-scrollbar p-5 lg:p-8 flex flex-col bg-gray-50/30">
-                        <div className="flex-1 flex flex-col gap-6 lg:gap-8 pb-4">
+                     <div className="flex-1 overflow-hidden custom-scrollbar p-4 lg:p-6 flex flex-col bg-gray-50/30">
+                        <div className="flex-1 flex flex-col gap-4 lg:gap-5 pb-2">
                            
                            {/* STEP Title */}
                            <div>
-                              <h2 className="text-2xl font-bold text-gray-800 mb-2">Kategorinizi Seçin</h2>
+                              <h2 className="text-xl lg:text-2xl font-bold text-gray-800 mb-1">Kategorinizi Seçin</h2>
                               <p className="text-gray-500 text-sm">Size en uygun taşıma tipini belirleyin.</p>
                            </div>
 
                            {/* Categories Grid - Adjusted to show all */}
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4">
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 lg:gap-2.5 pb-2">
                               {CATEGORIES.map((cat, index) => {
                                  const isSelected = selectedCategory === cat.id;
                                  const categoryCode = isShipper ? cat.shipperCode : cat.carrierCode;
@@ -301,14 +301,14 @@ const Hero: React.FC = () => {
                                     <button
                                        key={cat.id}
                                        onClick={() => setSelectedCategory(cat.id)}
-                                       className={`flex items-start gap-3 p-4 rounded-2xl border text-left transition-all duration-200 group hover:shadow-md ${
+                                       className={`flex items-start gap-2 lg:gap-3 p-2.5 lg:p-3.5 rounded-2xl border text-left transition-all duration-200 group hover:shadow-md ${
                                           isSelected 
                                             ? `${isShipper ? 'border-brand-dark bg-blue-50/50 ring-1 ring-brand-dark' : 'border-brand-orange bg-orange-50/50 ring-1 ring-brand-orange'} shadow-sm` 
                                             : 'border-gray-100 bg-white hover:border-gray-300'
                                        }`}
                                        style={{ animationDelay: `${index * 50}ms` }}
                                     >
-                                       <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                                       <div className={`w-9 h-9 lg:w-10 lg:h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
                                           isSelected
                                             ? (isShipper ? 'bg-brand-dark text-white' : 'bg-brand-orange text-white')
                                             : 'bg-gray-100 text-gray-500 group-hover:bg-gray-200'
@@ -316,10 +316,10 @@ const Hero: React.FC = () => {
                                           <cat.icon size={18} />
                                        </div>
                                        <div>
-                                          <span className={`block text-xs font-bold mb-1 opacity-70 ${isSelected ? (isShipper ? 'text-brand-dark' : 'text-brand-orange') : 'text-gray-400'}`}>
+                                          <span className={`block text-[10px] lg:text-xs font-bold mb-0.5 lg:mb-1 opacity-70 ${isSelected ? (isShipper ? 'text-brand-dark' : 'text-brand-orange') : 'text-gray-400'}`}>
                                              {categoryCode}
                                           </span>
-                                          <span className={`text-sm font-semibold leading-tight block ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
+                                          <span className={`text-xs lg:text-sm font-semibold leading-tight block ${isSelected ? 'text-gray-900' : 'text-gray-600'}`}>
                                              {categoryLabel}
                                           </span>
                                        </div>
@@ -331,9 +331,9 @@ const Hero: React.FC = () => {
                      </div>
                      
                      {/* Action Button - Sticky Bottom */}
-                     <div className="p-5 lg:p-6 border-t border-gray-100 bg-white z-20 flex-none shrink-0 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
+                     <div className="p-4 lg:p-5 border-t border-gray-100 bg-white z-20 flex-none shrink-0 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
                         <div className={`animate-in slide-in-from-bottom-4 duration-500`}>
-                          <Link href="/giris" className={`w-full py-4 rounded-xl text-white font-bold text-lg shadow-lg flex items-center justify-center gap-3 transition-transform hover:-translate-y-0.5 active:scale-[0.98] ${themeBg}`}>
+                          <Link href="/giris" className={`w-full py-3 lg:py-4 rounded-xl text-white font-bold text-base lg:text-lg shadow-lg flex items-center justify-center gap-3 transition-transform hover:-translate-y-0.5 active:scale-[0.98] ${themeBg}`}>
                               Devam Et
                               <ArrowRight size={20} />
                           </Link>

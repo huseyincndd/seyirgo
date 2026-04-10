@@ -7,25 +7,16 @@ import {
   LayoutDashboard,
   Package,
   Truck,
-  FileText,
-  Wallet,
   Settings,
   HelpCircle,
   LogOut,
   ChevronLeft,
   ChevronRight,
-  User2,
-  Bell,
-  Search,
   Plus,
-  MapPin,
-  Clock,
-  Star,
-  Building2,
-  Route,
+  Megaphone,
   Navigation,
-  CreditCard,
-  ShieldCheck
+  ShieldCheck,
+  CreditCard
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -39,24 +30,19 @@ interface SidebarProps {
 const SHIPPER_MENU = [
   { id: 'sb-dash', label: 'Genel Bakış', href: '/shipper', icon: LayoutDashboard },
   { id: 'sb-loads', label: 'Yüklerim', href: '/shipper/yukler', icon: Package },
-  { id: 'sb-new', label: 'Yeni Yük İlanı', href: '/shipper/yeni-ilan', icon: Plus },
-  { id: 'sb-offers', label: 'Teklifler', href: '/shipper/teklifler', icon: FileText },
+  { id: 'sb-new', label: 'Yeni İlan Ver', href: '/shipper/yeni-ilan', icon: Plus },
   { id: 'sb-active', label: 'Aktif Taşımalar', href: '/shipper/aktif-tasimalar', icon: Truck },
-  { id: 'sb-history', label: 'Geçmiş', href: '/shipper/gecmis', icon: Clock },
-  { id: 'sb-payments', label: 'Ödemeler', href: '/shipper/odemeler', icon: Wallet },
 ];
 
 // Menü öğeleri - Taşıyıcı için
 const CARRIER_MENU = [
   { id: 'cb-dash', label: 'Genel Bakış', href: '/carrier', icon: LayoutDashboard },
-  { id: 'cb-routes', label: 'Rotalarım', href: '/carrier/rotalarim', icon: Route },
-  { id: 'cb-new-route', label: 'Rota Ekle', href: '/carrier/rota-ekle', icon: Plus },
+  { id: 'cb-ilanlar', label: 'İlanlarım', href: '/carrier/ilanlarim', icon: Megaphone },
+  { id: 'cb-new-ilan', label: 'İlan Ver', href: '/carrier/ilan-ekle', icon: Plus },
   { id: 'cb-loads', label: 'Uygun Yükler', href: '/carrier/uygun-yukler', icon: Package },
-  { id: 'cb-offers', label: 'Tekliflerim', href: '/carrier/tekliflerim', icon: FileText },
   { id: 'cb-active', label: 'Aktif Taşımalar', href: '/carrier/aktif-tasimalar', icon: Truck },
   { id: 'cb-vehicles', label: 'Araçlarım', href: '/carrier/araclarim', icon: Navigation },
-  { id: 'cb-history', label: 'Geçmiş', href: '/carrier/gecmis', icon: Clock },
-  { id: 'cb-earnings', label: 'Kazançlar', href: '/carrier/kazanclar', icon: Wallet },
+  { id: 'cb-subs', label: 'Aboneliğim', href: '/carrier/abonelik', icon: CreditCard },
 ];
 
 const BOTTOM_MENU = [

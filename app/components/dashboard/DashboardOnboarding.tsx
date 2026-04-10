@@ -338,11 +338,11 @@ const getCarrierSteps = (onNavigate: (path: string) => void): DriveStep[] => [
   {
     element: '#header-new-route-btn',
     popover: {
-      title: 'Hızlı Rota Ekleme',
+      title: 'Hızlı İlan Ekleme',
       description: `
         <div style="line-height: 1.7;">
           <p style="margin-bottom: 10px;">Bu buton her zaman görünür ve hızlı erişim sağlar.</p>
-          <p style="color: #475569; font-size: 13px;">Yeni bir yolculuğa çıkmadan önce rotanızı tanımlayarak size uygun yüklerin otomatik eşleşmesini sağlayın.</p>
+          <p style="color: #475569; font-size: 13px;">İlan vererek size uygun yük sahipleriyle otomatik eşleşmeye başlayın.</p>
         </div>
       `,
       side: 'bottom' as Side,
@@ -350,20 +350,20 @@ const getCarrierSteps = (onNavigate: (path: string) => void): DriveStep[] => [
     },
   },
   {
-    element: '#cb-new-route',
+    element: '#cb-new-ilan',
     popover: {
-      title: 'Rota Ekleme Sayfası',
+      title: 'İlan Verme Sayfası',
       description: `
         <div style="line-height: 1.7;">
-          <p style="margin-bottom: 10px;"><strong>Nereye gidiyorsunuz?</strong> Bize söyleyin, uygun yükleri bulalım.</p>
+          <p style="margin-bottom: 10px;"><strong>Ne tür taşımacılık yapıyorsunuz?</strong> Kategori seçin, ilanınızı oluşturun.</p>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
             <div style="background: #f1f5f9; padding: 8px; border-radius: 6px; font-size: 12px;">
-              <strong style="display: block;">Kalkış</strong>
-              <span style="color: #64748b;">Nereden?</span>
+              <strong style="display: block;">Kategori</strong>
+              <span style="color: #64748b;">Hangi hizmet?</span>
             </div>
             <div style="background: #f1f5f9; padding: 8px; border-radius: 6px; font-size: 12px;">
-              <strong style="display: block;">Varış</strong>
-              <span style="color: #64748b;">Nereye?</span>
+              <strong style="display: block;">Güzergah</strong>
+              <span style="color: #64748b;">Nereden / Nereye?</span>
             </div>
           </div>
           <p style="color: #16a34a; font-size: 13px;">Bu sayfayı inceleyelim.</p>
@@ -371,25 +371,25 @@ const getCarrierSteps = (onNavigate: (path: string) => void): DriveStep[] => [
       `,
       side: 'right' as Side,
       onNextClick: () => {
-        onNavigate('/carrier/rota-ekle');
+        onNavigate('/carrier/ilan-ekle');
       },
     },
   },
   {
     popover: {
-      title: 'Rota Oluşturma Formu',
+      title: 'Taşıyıcı İlanı Formu',
       description: `
         <div style="line-height: 1.7;">
-          <p style="margin-bottom: 12px;"><strong>Rota Ekle</strong> sayfasındasınız.</p>
-          <p style="margin-bottom: 10px;">Form adımları:</p>
+          <p style="margin-bottom: 12px;"><strong>İlan Ver</strong> sayfasındasınız.</p>
+          <p style="margin-bottom: 10px;">İlan adımları:</p>
           <ol style="margin: 0; padding-left: 18px; color: #475569;">
-            <li style="margin-bottom: 4px;"><strong>Rota Bilgileri:</strong> Kalkış, varış ve ara duraklar</li>
-            <li style="margin-bottom: 4px;"><strong>Tarih & Araç:</strong> Ne zaman ve hangi araçla</li>
-            <li style="margin-bottom: 4px;"><strong>Tercihler:</strong> Kabul ettiğiniz yük tipleri</li>
-            <li><strong>Onay:</strong> Özet ve yayınlama</li>
+            <li style="margin-bottom: 4px;"><strong>Kategori:</strong> 7 kategori arasından hizmet tipinizi seçin</li>
+            <li style="margin-bottom: 4px;"><strong>Güzergah:</strong> Kalkış ve varış bilgilerinizi girin</li>
+            <li style="margin-bottom: 4px;"><strong>Araç Detayları:</strong> Araç tipi, kapasite ve kabul ettiğiniz yük tipleri</li>
+            <li><strong>Yayınla:</strong> İlanı gönderin ve eşleşmeleri bekleyin</li>
           </ol>
           <div style="margin-top: 10px; background: #eff6ff; border: 1px solid #bfdbfe; padding: 8px 10px; border-radius: 6px;">
-            <p style="margin: 0; color: #1e40af; font-size: 12px;">Rota yayınlandığında uygun yükler otomatik eşleşir.</p>
+            <p style="margin: 0; color: #1e40af; font-size: 12px;">İlan yayınlandığında uygun yük sahipleriyle otomatik eşleşme başlar.</p>
           </div>
         </div>
       `,
@@ -402,10 +402,10 @@ const getCarrierSteps = (onNavigate: (path: string) => void): DriveStep[] => [
       title: 'Uygun Yükler - Temel Sayfa',
       description: `
         <div style="line-height: 1.7;">
-          <p style="margin-bottom: 10px;"><strong>En önemli sayfanız.</strong> Rotalarınıza göre sistem otomatik eşleştirme yapar.</p>
+          <p style="margin-bottom: 10px;"><strong>En önemli sayfanız.</strong> İlanlarınıza göre sistem otomatik eşleştirme yapar.</p>
           <p style="margin-bottom: 8px;">Bu sayfada:</p>
           <ul style="margin: 0; padding-left: 18px; color: #475569; font-size: 13px;">
-            <li style="margin-bottom: 4px;">Her rotanıza uyan yükler listelenir</li>
+            <li style="margin-bottom: 4px;">Her ilanınıza uyan yükler listelenir</li>
             <li style="margin-bottom: 4px;">Yük detaylarını inceleyebilirsiniz</li>
             <li>Beğendiğiniz yüklere teklif verebilirsiniz</li>
           </ul>

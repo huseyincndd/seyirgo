@@ -4,9 +4,8 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  ArrowLeft, Plus, Package, MapPin, Calendar, Truck,
-  CheckCircle, Clock, XCircle, ChevronRight, Trash2,
-  Edit3, Search
+  ArrowLeft, Plus, Megaphone, MapPin, Calendar, Truck,
+  CheckCircle, Clock, XCircle, ChevronRight, Package, Edit3, Trash2
 } from 'lucide-react';
 
 const CAT_MAP: Record<string, { label: string; color: string }> = {
@@ -25,53 +24,51 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: React.Com
   expired:  { label: 'Süresi Doldu', color: 'bg-red-50 text-red-600 border-red-100', icon: XCircle },
 };
 
-const INITIAL_LOADS = [
+const MY_LISTINGS = [
   {
-    id: 'YK-2026-101', cat: '1A',
-    title: 'Ofis Mobilyaları',
-    from: 'İstanbul', fromSub: 'Bağcılar',
-    to: 'Ankara', toSub: 'Ostim',
-    weight: '4.5 Ton', vehicle: 'Kapalı Kasa Kamyon',
-    date: '26 Nis 2026', status: 'active', matches: 3,
+    id: 'IL-2026-001',
+    cat: '1A',
+    from: 'İstanbul', to: 'Ankara',
+    vehicle: 'Tır / Kapalı Kasa',
+    capacity: '25 Ton',
+    date: '24 Nis 2026',
+    status: 'active',
+    matches: 3,
   },
   {
-    id: 'YK-2026-102', cat: '1A',
-    title: 'Tekstil Kolileri',
-    from: 'Bursa', fromSub: 'Nilüfer',
-    to: 'İzmir', toSub: 'Konak',
-    weight: '6.0 Ton', vehicle: 'Tenteli Kamyon',
-    date: '27 Nis 2026', status: 'active', matches: 2,
+    id: 'IL-2026-002',
+    cat: '1A',
+    from: 'Bursa', to: 'İzmir',
+    vehicle: 'Kamyon / Tenteli',
+    capacity: '10 Ton',
+    date: '27 Nis 2026',
+    status: 'active',
+    matches: 2,
   },
   {
-    id: 'YK-2026-103', cat: '1B',
-    title: 'Ev Eşyası Taşıma',
-    from: 'Ankara', fromSub: 'Çankaya',
-    to: 'İstanbul', toSub: 'Kadıköy',
-    weight: '3.0 Ton', vehicle: 'Kapalı Kasa',
-    date: '20 Nis 2026', status: 'expired', matches: 0,
+    id: 'IL-2026-003',
+    cat: '1B',
+    from: 'Ankara', to: 'İstanbul',
+    vehicle: 'Kapalı Kasa Kamyon',
+    capacity: '5 Ton',
+    date: '20 Nis 2026',
+    status: 'expired',
+    matches: 0,
   },
 ];
 
-export default function YuklerPage() {
+export default function IlanlarimPage() {
   const router = useRouter();
-  const [loads, setLoads] = useState(INITIAL_LOADS);
-  const [search, setSearch] = useState('');
-
-  const filtered = loads.filter(l =>
-    search === '' ||
-    l.title.toLowerCase().includes(search.toLowerCase()) ||
-    l.from.toLowerCase().includes(search.toLowerCase()) ||
-    l.to.toLowerCase().includes(search.toLowerCase())
-  );
+  const [listings, setListings] = useState(MY_LISTINGS);
 
   const handleDelete = (id: string) => {
     if (confirm('Bu ilanı silmek istediğinize emin misiniz?')) {
-      setLoads(prev => prev.filter(l => l.id !== id));
+      setListings(prev => prev.filter(l => l.id !== id));
     }
   };
 
-  const activeCount = loads.filter(l => l.status === 'active').length;
-  const totalMatches = loads.reduce((s, l) => s + l.matches, 0);
+  const activeCount = listings.filter(l => l.status === 'active').length;
+  const totalMatches = listings.reduce((sum, l) => sum + l.matches, 0);
 
   return (
     <div className="min-h-screen bg-[#F8F9FC] text-slate-800 pb-20">
@@ -83,11 +80,11 @@ export default function YuklerPage() {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">Yüklerim</h1>
-            <p className="text-xs text-slate-500 font-medium">Yük ilanlarınızı yönetin</p>
+            <h1 className="text-xl font-black text-slate-900 tracking-tight">İlanlarım</h1>
+            <p className="text-xs text-slate-500 font-medium">Yayındaki ve geçmiş ilanlarınız</p>
           </div>
         </div>
-        <Link href="/shipper/yeni-ilan"
+        <Link href="/carrier/ilan-ekle"
           className="flex items-center gap-2 bg-brand-dark text-white text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-slate-800 transition-all shadow-sm">
           <Plus size={16} /> Yeni İlan
         </Link>
@@ -107,88 +104,73 @@ export default function YuklerPage() {
           </div>
         </div>
 
-        {/* Arama */}
-        <div className="relative">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="İlan, şehir veya yük tipi ara..."
-            className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:border-brand-dark focus:ring-1 focus:ring-brand-dark outline-none transition-all shadow-sm"
-          />
-        </div>
-
-        {/* Liste */}
-        {filtered.length === 0 ? (
+        {/* İlan Listesi */}
+        {listings.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-            <Package size={48} className="text-gray-200 mx-auto mb-4" />
-            <div className="font-bold text-gray-400">İlan bulunamadı</div>
-            <p className="text-sm text-gray-400 mt-1 mb-6">Henüz ilan vermediniz veya arama sonucu boş.</p>
-            <Link href="/shipper/yeni-ilan"
+            <Megaphone size={48} className="text-gray-200 mx-auto mb-4" />
+            <div className="font-bold text-gray-400">Henüz ilan vermediniz</div>
+            <p className="text-sm text-gray-400 mt-1 mb-6">İlan vererek uygun yüklerle eşleşin.</p>
+            <Link href="/carrier/ilan-ekle"
               className="inline-flex items-center gap-2 bg-brand-dark text-white font-bold px-6 py-3 rounded-xl hover:bg-slate-800 transition-all">
               <Plus size={18} /> İlk İlanınızı Verin
             </Link>
           </div>
         ) : (
           <div className="space-y-3">
-            {filtered.map(load => {
-              const status = STATUS_MAP[load.status];
-              const cat = CAT_MAP[load.cat];
+            {listings.map(ilan => {
+              const status = STATUS_MAP[ilan.status];
+              const cat = CAT_MAP[ilan.cat];
               const StatusIcon = status.icon;
               return (
-                <div key={load.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                <div key={ilan.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
                   <div className="p-5">
-                    {/* Top */}
-                    <div className="flex items-start justify-between gap-3 mb-3">
+                    {/* Top Row */}
+                    <div className="flex items-start justify-between gap-3 mb-4">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg ${cat.color}`}>{load.cat} — {cat.label}</span>
-                        <span className="text-xs text-gray-400 font-mono">{load.id}</span>
+                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg ${cat.color}`}>{ilan.cat} — {cat.label}</span>
+                        <span className="text-xs text-gray-400 font-mono">{ilan.id}</span>
                       </div>
-                      <span className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border flex-shrink-0 ${status.color}`}>
+                      <span className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${status.color}`}>
                         <StatusIcon size={12} /> {status.label}
                       </span>
                     </div>
 
-                    {/* Başlık */}
-                    <div className="font-black text-slate-900 text-lg mb-3">{load.title}</div>
-
                     {/* Route */}
                     <div className="flex items-center gap-3 mb-4">
                       <div className="flex items-center gap-1 text-sm font-bold text-gray-500">
-                        <MapPin size={14} className="text-green-500" /> {load.from}
-                        <span className="text-xs text-gray-400 font-normal">{load.fromSub}</span>
+                        <MapPin size={14} className="text-green-500" /> {ilan.from}
                       </div>
-                      <ChevronRight size={14} className="text-gray-300" />
+                      <ChevronRight size={16} className="text-gray-300" />
                       <div className="flex items-center gap-1 text-sm font-bold text-slate-900">
-                        <MapPin size={14} className="text-brand-orange" /> {load.to}
-                        <span className="text-xs text-gray-400 font-normal">{load.toSub}</span>
+                        <MapPin size={14} className="text-brand-orange" /> {ilan.to}
                       </div>
                     </div>
 
                     {/* Details */}
                     <div className="grid grid-cols-3 gap-3 mb-4">
                       <div className="bg-gray-50 rounded-xl p-3">
-                        <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Ağırlık</div>
-                        <div className="text-xs font-bold text-slate-700">{load.weight}</div>
+                        <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Araç</div>
+                        <div className="text-xs font-bold text-slate-700">{ilan.vehicle}</div>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-3">
-                        <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Araç</div>
-                        <div className="text-xs font-bold text-slate-700">{load.vehicle}</div>
+                        <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Kapasite</div>
+                        <div className="text-xs font-bold text-slate-700">{ilan.capacity}</div>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-3">
                         <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Tarih</div>
-                        <div className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                          <Calendar size={11} className="text-brand-orange" /> {load.date}
-                        </div>
+                        <div className="text-xs font-bold text-slate-700">{ilan.date}</div>
                       </div>
                     </div>
 
                     {/* Footer */}
                     <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                      {load.matches > 0 ? (
-                        <div className="flex items-center gap-2 text-sm font-bold text-brand-orange">
-                          <Truck size={15} />
-                          {load.matches} taşıyıcı eşleşti
-                        </div>
+                      {ilan.matches > 0 ? (
+                        <Link href="/carrier/uygun-yukler"
+                          className="flex items-center gap-2 text-sm font-bold text-brand-dark hover:underline">
+                          <Package size={15} className="text-brand-orange" />
+                          {ilan.matches} yük eşleşmesi
+                          <ChevronRight size={14} />
+                        </Link>
                       ) : (
                         <span className="text-xs text-gray-400">Henüz eşleşme yok</span>
                       )}
@@ -196,7 +178,7 @@ export default function YuklerPage() {
                         <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors">
                           <Edit3 size={15} />
                         </button>
-                        <button onClick={() => handleDelete(load.id)} className="p-2 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-500 transition-colors">
+                        <button onClick={() => handleDelete(ilan.id)} className="p-2 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-500 transition-colors">
                           <Trash2 size={15} />
                         </button>
                       </div>
@@ -208,8 +190,9 @@ export default function YuklerPage() {
           </div>
         )}
 
-        {filtered.length > 0 && (
-          <Link href="/shipper/yeni-ilan"
+        {/* Yeni ilan CTA */}
+        {listings.length > 0 && (
+          <Link href="/carrier/ilan-ekle"
             className="flex items-center justify-center gap-2 w-full py-4 border-2 border-dashed border-gray-200 rounded-2xl text-gray-400 hover:border-brand-dark hover:text-brand-dark hover:bg-white transition-all font-bold text-sm">
             <Plus size={18} /> Yeni İlan Ver
           </Link>

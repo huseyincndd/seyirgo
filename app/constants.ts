@@ -5,6 +5,7 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Anasayfa', href: '/' },
   { label: 'Kurumsal', href: '/kurumsal' },
   { label: 'Hizmetlerimiz', href: '/hizmetler' },
+  { label: 'Abonelikler', href: '/abonelikler' },
   { label: 'İletişim', href: '/iletisim' },
 ];
 

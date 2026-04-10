@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
+import QuickSearch from './components/QuickSearch';
 import Features from './components/Features';
 import InfoSection from './components/InfoSection';
 import SimpleSteps from './components/SimpleSteps';
@@ -12,6 +13,7 @@ export default function Home() {
       <Navbar />
       <main className="flex-grow">
         <Hero />
+        <QuickSearch />
         <SimpleSteps />
         <Features />
         <InfoSection />
