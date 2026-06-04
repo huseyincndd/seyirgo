@@ -7,36 +7,24 @@ import {
   Navigation, ChevronRight, Calendar, Phone, X
 } from 'lucide-react';
 
-const JOBS = [
-  {
-    id: '#TS-2026-001',
-    from: 'Bursa', fromSub: 'Nilüfer',
-    to: 'İzmir', toSub: 'Kemalpaşa',
-    cargo: 'Tekstil Ürünleri',
-    weight: '6.2 Ton',
-    plate: '16 KA 202',
-    vehicle: 'Volvo FH — Tır',
-    date: '24 Nis 2026',
-    eta: 'Bugün, 15:00',
-    status: 'transit',
-    progress: 60,
-    shipper: { name: 'Fatma Demir', phone: '0544 987 65 43' },
-  },
-  {
-    id: '#TS-2026-002',
-    from: 'İstanbul', fromSub: 'Bağcılar',
-    to: 'Ankara', toSub: 'Ostim',
-    cargo: 'Otomotiv Parçaları',
-    weight: '8.5 Ton',
-    plate: '34 VP 1923',
-    vehicle: 'Mercedes Actros — Tır',
-    date: '26 Nis 2026',
-    eta: '26 Nis, 12:00',
-    status: 'loading',
-    progress: 10,
-    shipper: { name: 'Mehmet Yılmaz', phone: '0532 123 45 67' },
-  },
-];
+type JobItem = {
+  id: string;
+  from: string;
+  fromSub: string;
+  to: string;
+  toSub: string;
+  cargo: string;
+  weight: string;
+  plate: string;
+  vehicle: string;
+  date: string;
+  eta: string;
+  status: string;
+  progress: number;
+  shipper: { name: string; phone: string };
+};
+
+const JOBS: JobItem[] = [];
 
 const STATUS_MAP: Record<string, { label: string; color: string; dot: string }> = {
   loading:   { label: 'Yükleniyor', color: 'bg-yellow-50 text-yellow-700 border-yellow-100', dot: 'bg-yellow-400' },

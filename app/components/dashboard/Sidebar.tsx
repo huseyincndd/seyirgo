@@ -16,14 +16,26 @@ import {
   Megaphone,
   Navigation,
   ShieldCheck,
-  CreditCard
+  CreditCard,
+  Lock,
 } from 'lucide-react';
+import type { OnboardingStep } from '@/app/types';
+import {
+  CARRIER_DOCUMENTS_REQUIRED_PATHS,
+  CARRIER_VEHICLE_REQUIRED_PATHS,
+  SHIPPER_DOCUMENTS_REQUIRED_PATHS,
+} from '@/lib/onboarding';
 
 interface SidebarProps {
   userType: 'shipper' | 'carrier';
   userName?: string;
   companyName?: string;
-  onClose?: () => void; // For mobile menu closing
+  onClose?: () => void;
+  onLogout?: () => void;
+  onboardingStep?: OnboardingStep;
+  hasVehicle?: boolean;
+  profileCompleted?: boolean;
+  documentsSubmitted?: boolean;
 }
 
 // Menü öğeleri - Yük Veren için
@@ -32,6 +44,10 @@ const SHIPPER_MENU = [
   { id: 'sb-loads', label: 'Yüklerim', href: '/shipper/yukler', icon: Package },
   { id: 'sb-new', label: 'Yeni İlan Ver', href: '/shipper/yeni-ilan', icon: Plus },
   { id: 'sb-active', label: 'Aktif Taşımalar', href: '/shipper/aktif-tasimalar', icon: Truck },
+];
+
+const SHIPPER_ACCOUNT_MENU = [
+  { id: 'sb-docs', label: 'Belgelerim', href: '/shipper/belgeler', icon: ShieldCheck },
 ];
 
 // Menü öğeleri - Taşıyıcı için
@@ -45,22 +61,32 @@ const CARRIER_MENU = [
   { id: 'cb-subs', label: 'Aboneliğim', href: '/carrier/abonelik', icon: CreditCard },
 ];
 
+const CARRIER_ACCOUNT_MENU = [
+  { id: 'cb-docs', label: 'Belgelerim', href: '/carrier/belgeler', icon: ShieldCheck },
+];
+
 const BOTTOM_MENU = [
   { label: 'Ayarlar', href: '/ayarlar', icon: Settings },
   { label: 'Yardım', href: '/yardim', icon: HelpCircle },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ 
-  userType, 
+const Sidebar: React.FC<SidebarProps> = ({
+  userType,
   userName = 'Kullanıcı',
   companyName = 'Firma Adı',
-  onClose
+  onClose,
+  onLogout,
+  onboardingStep = 'done',
+  hasVehicle = true,
+  profileCompleted = true,
+  documentsSubmitted = true,
 }) => {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   
   const isShipper = userType === 'shipper';
   const menuItems = isShipper ? SHIPPER_MENU : CARRIER_MENU;
+  const accountMenuItems = isShipper ? SHIPPER_ACCOUNT_MENU : CARRIER_ACCOUNT_MENU;
   
   // Theme Config
   const activeClass = isShipper 
@@ -72,11 +98,24 @@ const Sidebar: React.FC<SidebarProps> = ({
     : 'bg-orange-50 text-brand-orange border-orange-100';
 
   const isActive = (href: string) => {
-    // Exact match for root dashboard pages, startsWith for subpages
     if (href === '/shipper' || href === '/carrier') {
       return pathname === href;
     }
     return pathname.startsWith(href);
+  };
+
+  const isMenuLocked = (href: string): boolean => {
+    if (!profileCompleted) return true;
+    if (!documentsSubmitted) {
+      if (userType === 'carrier') {
+        return CARRIER_DOCUMENTS_REQUIRED_PATHS.some((p) => href.startsWith(p));
+      }
+      return SHIPPER_DOCUMENTS_REQUIRED_PATHS.some((p) => href.startsWith(p));
+    }
+    if (userType === 'carrier' && !hasVehicle) {
+      return CARRIER_VEHICLE_REQUIRED_PATHS.some((p) => href.startsWith(p));
+    }
+    return false;
   };
 
   return (
@@ -141,7 +180,30 @@ const Sidebar: React.FC<SidebarProps> = ({
             {menuItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
-              
+              const locked = isMenuLocked(item.href);
+
+              if (locked) {
+                return (
+                  <div
+                    key={item.href}
+                    title="Önce profilinizi ve aracınızı tamamlayın"
+                    className={`
+                      flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm
+                      text-gray-300 cursor-not-allowed
+                      ${isCollapsed ? 'justify-center' : ''}
+                    `}
+                  >
+                    <Icon size={20} className="text-gray-300" />
+                    {!isCollapsed && (
+                      <>
+                        <span className="flex-1">{item.label}</span>
+                        <Lock size={14} />
+                      </>
+                    )}
+                  </div>
+                );
+              }
+
               return (
                 <Link
                   key={item.href}
@@ -151,16 +213,15 @@ const Sidebar: React.FC<SidebarProps> = ({
                   className={`
                     flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 group
                     ${isCollapsed ? 'justify-center' : ''}
-                    ${active 
+                    ${active
                       ? activeClass
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}
                   `}
                   title={isCollapsed ? item.label : undefined}
                 >
-                  <Icon 
-                    size={20} 
-                    className={`transition-colors ${active ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'}`} 
+                  <Icon
+                    size={20}
+                    className={`transition-colors ${active ? 'text-white' : 'text-gray-400 group-hover:text-gray-600'}`}
                     strokeWidth={active ? 2.5 : 2}
                   />
                   {!isCollapsed && <span>{item.label}</span>}
@@ -178,6 +239,43 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
           <nav className="space-y-1">
+            {accountMenuItems.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
+              const locked = isMenuLocked(item.href);
+
+              if (locked) {
+                return (
+                  <div
+                    key={item.href}
+                    title="Önce gerekli adımları tamamlayın"
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm text-gray-300 cursor-not-allowed ${isCollapsed ? 'justify-center' : ''}`}
+                  >
+                    <Icon size={20} className="text-gray-300" />
+                    {!isCollapsed && (
+                      <>
+                        <span className="flex-1">{item.label}</span>
+                        <Lock size={14} />
+                      </>
+                    )}
+                  </div>
+                );
+              }
+
+              return (
+                <Link
+                  key={item.href}
+                  id={item.id}
+                  href={item.href}
+                  onClick={onClose}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 group ${isCollapsed ? 'justify-center' : ''} ${active ? 'bg-gray-100 text-gray-900' : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  <Icon size={20} className={`transition-colors ${active ? 'text-brand-dark' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                  {!isCollapsed && <span>{item.label}</span>}
+                </Link>
+              );
+            })}
             {BOTTOM_MENU.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -216,6 +314,11 @@ const Sidebar: React.FC<SidebarProps> = ({
            </div>
         )}
         <button
+          type="button"
+          onClick={() => {
+            onLogout?.();
+            onClose?.();
+          }}
           className={`
             flex items-center gap-3 px-3 py-2.5 rounded-xl font-bold text-sm transition-all w-full
             text-red-600 hover:bg-red-50

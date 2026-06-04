@@ -1,7 +1,9 @@
 'use client';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Package, Truck, ArrowLeft, User2, Building2, Mail, Phone, Lock, ChevronRight, ArrowRight, X, FileText, Check, AlertCircle } from 'lucide-react';
+import { apiFetch } from '@/lib/client-api';
+import { REGISTER_FIELD_LABELS } from '@/lib/validations/auth';
+import { Package, Truck, ArrowLeft, User2, Building2, Mail, Phone, Lock, ChevronRight, ArrowRight, X, FileText, Check, AlertCircle, Loader2 } from 'lucide-react';
 // Import path updated for App Router structure
 import Navbar from '../components/Navbar';
 
@@ -66,25 +68,84 @@ const RegisterPage: React.FC = () => {
   // KVKK Modal State
   const [showKvkkModal, setShowKvkkModal] = useState(false);
   const [canApproveKvkk, setCanApproveKvkk] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const modalContentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab === 'yuk-tasiyan') {
+      setUserType('carrier');
+      setStep(2);
+    } else if (tab === 'yuk-veren') {
+      setUserType('shipper');
+      setStep(2);
+    }
+  }, []);
 
   const handleTypeSelect = (type: 'shipper' | 'carrier') => {
     setUserType(type);
     setStep(2);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!userType) return;
     if (!formData.kvkkOnay) {
       alert('Lütfen KVKK aydınlatma metnini onaylayın.');
       return;
     }
-    // Combine country code with phone for submission if needed
-    const fullPhone = `${countryCode}${formData.telefon}`;
-    console.log('Registration Data:', { ...formData, fullPhone });
-    
-    // Redirect after registration
-    router.push('/giris');
+    if (formData.sifre !== formData.sifreTekrar) {
+      setError('Şifreler eşleşmiyor');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setFieldErrors({});
+
+    const phoneDigits = formData.telefon.replace(/\D/g, '');
+    const fullPhone = `${countryCode}${phoneDigits}`;
+
+    const res = await apiFetch<{ redirectTo: string }>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        role: userType,
+        firstName: formData.isim,
+        lastName: formData.soyisim,
+        tcNo: formData.tcKimlik.trim() || undefined,
+        birthYear: formData.dogumYili.trim() || undefined,
+        companyTitle: formData.sirketUnvani,
+        taxNo: formData.vergiNo,
+        taxOffice: formData.vergiDairesi,
+        address: formData.faturaAdresi,
+        email: formData.email,
+        phone: fullPhone,
+        password: formData.sifre,
+        passwordConfirm: formData.sifreTekrar,
+        smsMarketing: formData.smsOnay,
+      }),
+    });
+
+    setLoading(false);
+
+    if (!res.success || !res.data) {
+      setError(res.error ?? 'Kayıt başarısız');
+      if (res.errors) {
+        const mapped: Record<string, string> = {};
+        for (const [key, messages] of Object.entries(res.errors)) {
+          const label = REGISTER_FIELD_LABELS[key] ?? key;
+          mapped[key] = `${label}: ${messages.join(', ')}`;
+        }
+        setFieldErrors(mapped);
+      }
+      return;
+    }
+
+    router.push(res.data.redirectTo);
+    router.refresh();
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -296,22 +357,20 @@ const RegisterPage: React.FC = () => {
                                     name="tcKimlik" 
                                     maxLength={11} 
                                     inputMode="numeric"
-                                    placeholder="TC Kimlik No (11 Hane)" 
+                                    placeholder="TC Kimlik No (11 hane, opsiyonel)" 
                                     className={inputClass} 
                                     value={formData.tcKimlik} 
                                     onChange={handleNumericChange} 
-                                    required 
                                  />
                                  <input 
                                     type="text" 
                                     name="dogumYili" 
                                     maxLength={4} 
                                     inputMode="numeric"
-                                    placeholder="Doğum Yılı (Örn: 1990)" 
+                                    placeholder="Doğum Yılı (Örn: 1990, opsiyonel)" 
                                     className={inputClass} 
                                     value={formData.dogumYili} 
                                     onChange={handleNumericChange} 
-                                    required 
                                  />
                               </div>
                            </div>
@@ -416,8 +475,23 @@ const RegisterPage: React.FC = () => {
                               </label>
                            </div>
 
-                           <button type="submit" className={`w-full py-4 rounded-lg text-white font-bold text-sm uppercase tracking-wide shadow-lg flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-[0.99] ${bgAccent}`}>
-                              Kayıt İşlemini Tamamla <ArrowRight size={18} />
+                           {error && (
+                             <div className="p-3 bg-red-50 text-red-700 border border-red-100 rounded-lg text-sm mb-2 space-y-2">
+                               <div className="flex items-center gap-2 font-semibold">
+                                 <AlertCircle size={16} /> {error}
+                               </div>
+                               {Object.keys(fieldErrors).length > 0 && (
+                                 <ul className="list-disc list-inside text-xs space-y-1 font-medium">
+                                   {Object.values(fieldErrors).map((msg, i) => (
+                                     <li key={i}>{msg}</li>
+                                   ))}
+                                 </ul>
+                               )}
+                             </div>
+                           )}
+                           <button type="submit" disabled={loading} className={`w-full py-4 rounded-lg text-white font-bold text-sm uppercase tracking-wide shadow-lg flex items-center justify-center gap-2 hover:brightness-110 transition-all active:scale-[0.99] disabled:opacity-60 ${bgAccent}`}>
+                              {loading ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
+                              {loading ? 'Kaydediliyor...' : 'Kayıt İşlemini Tamamla'}
                            </button>
                         </form>
                      </div>

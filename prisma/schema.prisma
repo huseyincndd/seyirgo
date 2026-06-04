@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SHIPPER
+  CARRIER
+}
+
+enum OnboardingStep {
+  PROFILE
+  DOCUMENTS
+  VEHICLE
+  DONE
+}
+
+enum UserDocumentType {
+  TAX_PLATE
+  TRADE_REGISTRY
+  SIGNATURE_CIRCULAR
+  TRANSPORT_LICENSE
+  SRC_CERTIFICATE
+  DRIVER_LICENSE
+}
+
+enum VehicleDocumentType {
+  VEHICLE_REGISTRATION
+  TRAFFIC_INSURANCE
+  CARGO_INSURANCE
+}
+
+enum DocumentReviewStatus {
+  MISSING
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DocumentStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SubscriptionPlan {
+  FREE
+  STANDARD
+  PREMIUM
+  BUSINESS
+}
+
+enum VehicleType {
+  TIR
+  KAMYON
+  KAMYONET
+  PANELVAN
+  FRIGO
+  TENTELI
+  DAMPERLI
+  LOWBED
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  ACTIVE
+  MAINTENANCE
+}
+
+enum ListingDestinationType {
+  SPECIFIC_CITY
+  TURKEY_WIDE
+}
+
+enum CarrierListingStatus {
+  ACTIVE
+  PAUSED
+  EXPIRED
+}
+
+model User {
+  id                 String           @id @default(cuid())
+  email              String           @unique
+  passwordHash       String
+  role               UserRole
+
+  firstName          String
+  lastName           String
+  phone              String
+  tcNo               String?
+  birthYear          String?
+
+  companyTitle       String           @default("")
+  taxNo              String           @default("")
+  taxOffice          String           @default("")
+  address            String           @default("")
+
+  profileCompleted   Boolean          @default(false)
+  profileCompletedAt DateTime?
+  onboardingStep     OnboardingStep   @default(PROFILE)
+  documentStatus     DocumentStatus   @default(NONE)
+  isVerified         Boolean          @default(false)
+  subscriptionPlan   SubscriptionPlan @default(FREE)
+  smsMarketing       Boolean          @default(false)
+
+  vehicles           Vehicle[]
+  carrierListings    CarrierListing[]
+  userDocuments      UserDocument[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([role])
+}
+
+model UserDocument {
+  id           String               @id @default(cuid())
+  userId       String
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         UserDocumentType
+  status       DocumentReviewStatus @default(MISSING)
+  demoFileName String?
+  rejectReason String?
+  submittedAt  DateTime?
+  reviewedAt   DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+model VehicleDocument {
+  id           String               @id @default(cuid())
+  vehicleId    String
+  vehicle      Vehicle              @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  type         VehicleDocumentType
+  status       DocumentReviewStatus @default(MISSING)
+  demoFileName String?
+  rejectReason String?
+  submittedAt  DateTime?
+  reviewedAt   DateTime?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@unique([vehicleId, type])
+  @@index([vehicleId])
+}
+
+model Vehicle {
+  id           String        @id @default(cuid())
+  plate        String
+  brand        String?
+  model        String?
+  year         String?
+  type         VehicleType
+  capacity     Float
+  capacityUnit String        @default("ton")
+  status       VehicleStatus @default(AVAILABLE)
+  ownerId      String
+  owner        User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  documents    VehicleDocument[]
+  listings     CarrierListing[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([ownerId, plate])
+  @@index([ownerId])
+}
+
+model CarrierListing {
+  id                String                 @id @default(cuid())
+  ownerId           String
+  owner             User                   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  vehicleId         String
+  vehicle           Vehicle                @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  originCity        String
+  destinationType   ListingDestinationType
+  destinationCity   String?
+  note              String?
+  availableFrom     DateTime?
+  status            CarrierListingStatus   @default(ACTIVE)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  @@index([ownerId])
+  @@index([vehicleId])
+  @@index([status])
+}

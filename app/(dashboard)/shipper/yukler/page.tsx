@@ -25,36 +25,11 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: React.Com
   expired:  { label: 'Süresi Doldu', color: 'bg-red-50 text-red-600 border-red-100', icon: XCircle },
 };
 
-const INITIAL_LOADS = [
-  {
-    id: 'YK-2026-101', cat: '1A',
-    title: 'Ofis Mobilyaları',
-    from: 'İstanbul', fromSub: 'Bağcılar',
-    to: 'Ankara', toSub: 'Ostim',
-    weight: '4.5 Ton', vehicle: 'Kapalı Kasa Kamyon',
-    date: '26 Nis 2026', status: 'active', matches: 3,
-  },
-  {
-    id: 'YK-2026-102', cat: '1A',
-    title: 'Tekstil Kolileri',
-    from: 'Bursa', fromSub: 'Nilüfer',
-    to: 'İzmir', toSub: 'Konak',
-    weight: '6.0 Ton', vehicle: 'Tenteli Kamyon',
-    date: '27 Nis 2026', status: 'active', matches: 2,
-  },
-  {
-    id: 'YK-2026-103', cat: '1B',
-    title: 'Ev Eşyası Taşıma',
-    from: 'Ankara', fromSub: 'Çankaya',
-    to: 'İstanbul', toSub: 'Kadıköy',
-    weight: '3.0 Ton', vehicle: 'Kapalı Kasa',
-    date: '20 Nis 2026', status: 'expired', matches: 0,
-  },
-];
-
 export default function YuklerPage() {
   const router = useRouter();
-  const [loads, setLoads] = useState(INITIAL_LOADS);
+  const [loads, setLoads] = useState<
+    { id: string; title: string; from: string; to: string; status: string; matches: number; date: string; cat: string; fromSub?: string; toSub?: string; weight?: string; vehicle?: string }[]
+  >([]);
   const [search, setSearch] = useState('');
 
   const filtered = loads.filter(l =>

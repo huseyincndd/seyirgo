@@ -7,21 +7,21 @@ import {
   ChevronRight, Phone, X, MapPin
 } from 'lucide-react';
 
-const TRANSPORTS = [
-  {
-    id: '#TS-2026-089',
-    loadTitle: 'Endüstriyel Mutfak Ekipmanı',
-    carrier: 'Öztürk Lojistik',
-    carrierPhone: '0532 111 22 33',
-    plate: '34 VP 1923',
-    from: 'İstanbul', fromSub: 'İkitelli',
-    to: 'Antalya', toSub: 'Muratpaşa',
-    status: 'transit',
-    progress: 72,
-    eta: 'Bugün, 20:30',
-    weight: '5.2 Ton',
-  },
-];
+const TRANSPORTS: {
+  id: string;
+  loadTitle: string;
+  carrier: string;
+  carrierPhone: string;
+  plate: string;
+  from: string;
+  fromSub: string;
+  to: string;
+  toSub: string;
+  status: string;
+  progress: number;
+  eta: string;
+  weight: string;
+}[] = [];
 
 const STATUS_MAP: Record<string, { label: string; color: string; dot: string }> = {
   loading:   { label: 'Yükleniyor', color: 'bg-yellow-50 text-yellow-700 border-yellow-100', dot: 'bg-yellow-400' },

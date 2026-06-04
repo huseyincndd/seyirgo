@@ -1,24 +1,43 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Lock, ArrowRight, ShieldCheck, CheckCircle2, User } from 'lucide-react';
-// Import path updated for App Router structure
+import { Mail, Lock, ArrowRight, ShieldCheck, CheckCircle2, Loader2, AlertCircle, User } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import { apiFetch } from '@/lib/client-api';
 
 const LoginPage: React.FC = () => {
   const router = useRouter();
+  const [redirectTo, setRedirectTo] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  React.useEffect(() => {
+    setRedirectTo(new URLSearchParams(window.location.search).get('redirect'));
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Giriş bilgileri:', formData);
-    // Real app would handle auth here
-    // Şimdilik demo olarak shipper dashboard'a yönlendir
-    // İleride kullanıcı tipine göre yönlendirme yapılacak
-    router.push('/shipper');
+    setLoading(true);
+    setError(null);
+
+    const res = await apiFetch<{ redirectTo: string }>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(formData),
+    });
+
+    setLoading(false);
+
+    if (!res.success || !res.data) {
+      setError(res.error ?? 'Giriş başarısız');
+      return;
+    }
+
+    router.push(redirectTo || res.data.redirectTo);
+    router.refresh();
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,7 +125,13 @@ const LoginPage: React.FC = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                 
+
+                 {error && (
+                   <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 border border-red-100 rounded-lg text-sm font-semibold">
+                     <AlertCircle size={16} /> {error}
+                   </div>
+                 )}
+
                  <div className="space-y-5">
                     <div>
                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2 ml-1">E-Posta Adresi</label>
@@ -162,9 +187,11 @@ const LoginPage: React.FC = () => {
 
                  <button
                     type="submit"
-                    className="w-full bg-brand-dark text-white font-bold py-4 rounded-lg hover:bg-[#003B7B] transition-all transform active:scale-[0.99] shadow-lg shadow-brand-dark/20 flex items-center justify-center gap-2 text-sm uppercase tracking-wide"
+                    disabled={loading}
+                    className="w-full bg-brand-dark text-white font-bold py-4 rounded-lg hover:bg-[#003B7B] transition-all transform active:scale-[0.99] shadow-lg shadow-brand-dark/20 flex items-center justify-center gap-2 text-sm uppercase tracking-wide disabled:opacity-60"
                  >
-                    Giriş Yap <ArrowRight size={18} />
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
+                    {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
                  </button>
               </form>
 
@@ -175,27 +202,6 @@ const LoginPage: React.FC = () => {
                        Hemen Kayıt Olun
                     </button>
                  </p>
-              </div>
-
-              {/* Test Login Buttons */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 text-center">Test Girişleri</p>
-                 <div className="space-y-3">
-                    <button
-                       onClick={() => router.push('/carrier')}
-                       className="w-full bg-gradient-to-r from-[#FF6B35] to-[#FF8C42] text-white font-bold py-3 rounded-lg hover:from-[#FF5722] hover:to-[#FF7B32] transition-all transform hover:scale-[1.02] active:scale-[0.99] shadow-md flex items-center justify-center gap-2 text-sm"
-                    >
-                       <User size={18} />
-                       Taşıyıcı Olarak Giriş Yap
-                    </button>
-                    <button
-                       onClick={() => router.push('/shipper')}
-                       className="w-full bg-gradient-to-r from-[#002B5B] to-[#003B7B] text-white font-bold py-3 rounded-lg hover:from-[#003B7B] hover:to-[#004B8B] transition-all transform hover:scale-[1.02] active:scale-[0.99] shadow-md flex items-center justify-center gap-2 text-sm"
-                    >
-                       <User size={18} />
-                       Yük Veren Olarak Giriş Yap
-                    </button>
-                 </div>
               </div>
 
            </div>

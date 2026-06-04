@@ -15,72 +15,20 @@ import {
   Wallet
 } from 'lucide-react';
 
-// Örnek geçmiş verisi
-const HISTORY = [
-  {
-    id: 'TS-2023-089',
-    loadId: 'YK-2023-445',
-    loadTitle: 'Tekstil Ürünleri',
-    origin: 'İstanbul / Merter',
-    destination: 'Ankara / Siteler',
-    shipper: 'Merter Tekstil A.Ş.',
-    earning: 11500,
-    date: '15 Ocak 2026',
-    status: 'completed',
-    rating: 5,
-    review: 'Profesyonel ve hızlı teslimat.',
-  },
-  {
-    id: 'TS-2023-088',
-    loadId: 'YK-2023-444',
-    loadTitle: 'Elektronik Malzeme',
-    origin: 'İstanbul / Tuzla',
-    destination: 'İzmir / Çiğli',
-    shipper: 'Tech Import Ltd.',
-    earning: 8200,
-    date: '12 Ocak 2026',
-    status: 'completed',
-    rating: 4,
-    review: 'Güvenilir taşıyıcı.',
-  },
-  {
-    id: 'TS-2023-087',
-    loadId: 'YK-2023-443',
-    loadTitle: 'Mobilya Ürünleri',
-    origin: 'Kayseri / OSB',
-    destination: 'Bursa / Nilüfer',
-    shipper: 'Kayseri Mobilya A.Ş.',
-    earning: 9800,
-    date: '8 Ocak 2026',
-    status: 'completed',
-    rating: 5,
-  },
-  {
-    id: 'TS-2023-086',
-    loadId: 'YK-2023-442',
-    loadTitle: 'İnşaat Malzemesi',
-    origin: 'Eskişehir / Merkez',
-    destination: 'Konya / OSB',
-    shipper: 'Yapı Market A.Ş.',
-    earning: 0,
-    date: '3 Ocak 2026',
-    status: 'cancelled',
-    cancelReason: 'Yük sahibi tarafından iptal edildi',
-  },
-  {
-    id: 'TS-2023-085',
-    loadId: 'YK-2023-441',
-    loadTitle: 'Gıda Ürünleri',
-    origin: 'Antalya / Merkez',
-    destination: 'Ankara / Merkez',
-    shipper: 'Fresh Foods Ltd.',
-    earning: 14200,
-    date: '28 Aralık 2025',
-    status: 'completed',
-    rating: 5,
-    review: 'Soğuk zincir mükemmel korundu.',
-  },
-];
+const HISTORY: {
+  id: string;
+  loadId: string;
+  loadTitle: string;
+  origin: string;
+  destination: string;
+  shipper: string;
+  earning: number;
+  date: string;
+  status: string;
+  rating?: number;
+  review?: string;
+  cancelReason?: string;
+}[] = [];
 
 type FilterStatus = 'all' | 'completed' | 'cancelled';
 

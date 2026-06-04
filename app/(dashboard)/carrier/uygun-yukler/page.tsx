@@ -7,45 +7,23 @@ import {
   X, CheckCircle, ArrowRight, Filter, Search, Info, Lock
 } from 'lucide-react';
 
-// ─── MOCK VERİ ────────────────────────────────────────────────────────────────
+type LoadItem = {
+  id: number;
+  cat: string;
+  from: string;
+  fromSub: string;
+  to: string;
+  toSub: string;
+  type: string;
+  weight: string;
+  date: string;
+  vehicle: string;
+  match: number;
+  shipper: { name: string; company: string; phone: string; email: string };
+  viewed: boolean;
+};
 
-const LOADS = [
-  {
-    id: 1, cat: '1A', from: 'İstanbul', fromSub: 'Bağcılar', to: 'Ankara', toSub: 'Ostim',
-    type: 'Otomotiv Parçaları', weight: '8.5 Ton', date: '25 Nis 2026',
-    vehicle: 'Tır / Kapalı Kasa', match: 98,
-    shipper: { name: 'Mehmet Yılmaz', company: 'Yılmaz Otomotiv A.Ş.', phone: '0532 123 45 67', email: 'mehmet@yilmazoto.com' },
-    viewed: false,
-  },
-  {
-    id: 2, cat: '1A', from: 'Bursa', fromSub: 'Nilüfer', to: 'İzmir', toSub: 'Kemalpaşa',
-    type: 'Tekstil Ürünleri', weight: '6.2 Ton', date: '27 Nis 2026',
-    vehicle: 'Kamyon / Tenteli', match: 95,
-    shipper: { name: 'Fatma Demir', company: 'Demir Tekstil Ltd.', phone: '0544 987 65 43', email: 'fatma@demirtekstil.com' },
-    viewed: false,
-  },
-  {
-    id: 3, cat: '1A', from: 'İstanbul', fromSub: 'Esenyurt', to: 'Konya', toSub: 'Selçuklu',
-    type: 'Elektronik Malzeme', weight: '3.1 Ton', date: '25 Nis 2026',
-    vehicle: 'Kamyon / Kapalı Kasa', match: 92,
-    shipper: { name: 'Ali Kaya', company: 'Kaya Elektronik', phone: '0505 444 33 22', email: 'ali@kayaelektronik.com' },
-    viewed: true,
-  },
-  {
-    id: 4, cat: '1B', from: 'Ankara', fromSub: 'Çankaya', to: 'İstanbul', toSub: 'Kadıköy',
-    type: 'Ev Eşyası Taşıma', weight: '4.0 Ton', date: '28 Nis 2026',
-    vehicle: 'Kapalı Kasa Kamyon', match: 87,
-    shipper: { name: 'Zeynep Arslan', company: 'Bireysel', phone: '0533 222 11 00', email: 'zeynep@mail.com' },
-    viewed: false,
-  },
-  {
-    id: 5, cat: '1A', from: 'İzmir', fromSub: 'Gaziemir', to: 'Mersin', toSub: 'Tarsus',
-    type: 'Gıda Ürünleri', weight: '12 Ton', date: '30 Nis 2026',
-    vehicle: 'Frigorifik Tır', match: 85,
-    shipper: { name: 'Hasan Çelik', company: 'Çelik Gıda A.Ş.', phone: '0542 777 88 99', email: 'hasan@celikgida.com' },
-    viewed: false,
-  },
-];
+const LOADS: LoadItem[] = [];
 
 const CAT_LABELS: Record<string, string> = {
   'Tümü': 'Tümü',

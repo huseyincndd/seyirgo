@@ -15,79 +15,9 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-// Örnek kazanç verileri
-const EARNINGS = [
-  {
-    id: 'KZ-001',
-    loadId: 'YK-2024-102',
-    description: 'Elektronik Malzeme - İstanbul → Bursa',
-    amount: 4800,
-    date: '17 Ocak 2026',
-    status: 'completed',
-  },
-  {
-    id: 'KZ-002',
-    loadId: 'YK-2023-445',
-    description: 'Tekstil Ürünleri - İstanbul → Ankara',
-    amount: 11500,
-    date: '15 Ocak 2026',
-    status: 'completed',
-  },
-  {
-    id: 'KZ-003',
-    loadId: 'YK-2023-444',
-    description: 'Elektronik Malzeme - İstanbul → İzmir',
-    amount: 8200,
-    date: '12 Ocak 2026',
-    status: 'completed',
-  },
-  {
-    id: 'KZ-004',
-    loadId: 'YK-2023-443',
-    description: 'Mobilya Ürünleri - Kayseri → Bursa',
-    amount: 9800,
-    date: '8 Ocak 2026',
-    status: 'completed',
-  },
-  {
-    id: 'KZ-005',
-    loadId: 'YK-2023-441',
-    description: 'Gıda Ürünleri - Antalya → Ankara',
-    amount: 14200,
-    date: '28 Aralık 2025',
-    status: 'completed',
-  },
-];
-
-// Para çekme işlemleri
-const WITHDRAWALS = [
-  {
-    id: 'CK-001',
-    amount: 25000,
-    date: '10 Ocak 2026',
-    status: 'completed',
-    method: 'Havale',
-    account: '****1234',
-  },
-  {
-    id: 'CK-002',
-    amount: 15000,
-    date: '28 Aralık 2025',
-    status: 'completed',
-    method: 'Havale',
-    account: '****1234',
-  },
-];
-
-// Aylık kazanç verileri (grafik için)
-const MONTHLY_DATA = [
-  { month: 'Ağu', amount: 28500 },
-  { month: 'Eyl', amount: 35200 },
-  { month: 'Eki', amount: 42800 },
-  { month: 'Kas', amount: 38900 },
-  { month: 'Ara', amount: 45600 },
-  { month: 'Oca', amount: 48500 },
-];
+const EARNINGS: { id: string; loadId: string; description: string; amount: number; date: string; status: string }[] = [];
+const WITHDRAWALS: { id: string; amount: number; date: string; status: string; method: string; account: string }[] = [];
+const MONTHLY_DATA: { month: string; amount: number }[] = [];
 
 export default function KazanclarPage() {
   const [activeTab, setActiveTab] = useState<'earnings' | 'withdrawals'>('earnings');

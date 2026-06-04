@@ -20,22 +20,19 @@ import {
 interface DashboardHeaderProps {
   userType: 'shipper' | 'carrier';
   userName?: string;
+  userEmail?: string;
   onMenuToggle?: () => void;
   isMobileMenuOpen?: boolean;
+  onLogout?: () => void;
 }
 
-// Örnek bildirimler
-const NOTIFICATIONS = [
-  { id: 1, title: 'Yeni Teklif Geldi', desc: 'İstanbul - Ankara yükünüz için yeni bir teklif var.', time: '2 dk önce', unread: true, type: 'offer' },
-  { id: 2, title: 'Taşıma Tamamlandı', desc: '#8821 no\'lu taşıma başarıyla teslim edildi.', time: '1 saat önce', unread: true, type: 'success' },
-  { id: 3, title: 'Ödeme Alındı', desc: 'Hesabınıza 12.500 TL ödeme girişi yapıldı.', time: '3 saat önce', unread: false, type: 'info' },
-];
-
-const DashboardHeader: React.FC<DashboardHeaderProps> = ({ 
-  userType, 
+const DashboardHeader: React.FC<DashboardHeaderProps> = ({
+  userType,
   userName = 'Kullanıcı',
+  userEmail,
   onMenuToggle,
-  isMobileMenuOpen = false
+  isMobileMenuOpen = false,
+  onLogout,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -45,7 +42,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const accentBg = isShipper ? 'bg-brand-dark' : 'bg-brand-orange';
   const ringFocus = isShipper ? 'focus:ring-brand-dark/20' : 'focus:ring-brand-orange/20';
   
-  const unreadCount = NOTIFICATIONS.filter(n => n.unread).length;
+  const unreadCount = 0;
 
   return (
     <header className="h-[72px] bg-white border-b border-gray-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-[45] shadow-sm">
@@ -111,7 +108,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   </button>
                 </div>
                 <div className="max-h-[320px] overflow-y-auto">
-                  {NOTIFICATIONS.length > 0 ? NOTIFICATIONS.map((notif) => (
+                  {false ? [].map((notif: { id: number; title: string; desc: string; time: string; unread: boolean; type?: string }) => (
                     <div 
                       key={notif.id}
                       className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors relative ${notif.unread ? 'bg-blue-50/30' : ''}`}
@@ -177,7 +174,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                <div className="absolute right-0 top-full mt-3 w-[240px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
                   <div className="p-5 border-b border-gray-100 bg-gray-50/50">
                      <p className="text-sm font-black text-slate-900">{userName}</p>
-                     <p className="text-xs text-gray-500 mt-0.5 font-medium truncate">ahmet@firma.com</p>
+                     <p className="text-xs text-gray-500 mt-0.5 font-medium truncate">{userEmail ?? ''}</p>
                      <div className={`mt-3 inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${isShipper ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
                         {isShipper ? <Package size={10} /> : <Truck size={10} />}
                         {isShipper ? 'Kurumsal Hesap' : 'Onaylı Taşıyıcı'}
@@ -195,7 +192,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                      </Link>
                   </div>
                   <div className="border-t border-gray-100 py-2 bg-red-50/10">
-                     <button className="flex items-center gap-3 px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors w-full text-left">
+                     <button
+                        type="button"
+                        onClick={onLogout}
+                        className="flex items-center gap-3 px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors w-full text-left"
+                     >
                         <LogOut size={16} /> Çıkış Yap
                      </button>
                   </div>

@@ -6,19 +6,48 @@ export interface NavItem {
 export interface StatItem {
   value: string;
   label: string;
-  icon: any;
+  icon: unknown;
 }
 
 export interface FeatureItem {
   title: string;
   description: string;
-  icon: any;
+  icon: unknown;
 }
 
 // Dashboard & Business Types
 export type UserRole = 'shipper' | 'carrier';
 
 export type SubscriptionPlan = 'free' | 'standard' | 'premium' | 'business';
+
+export type OnboardingStep = 'profile' | 'documents' | 'vehicle' | 'done';
+
+export interface OnboardingStatus {
+  profileCompleted: boolean;
+  documentsSubmitted: boolean;
+  documentsApproved: boolean;
+  hasVehicle: boolean;
+  onboardingStep: OnboardingStep;
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: UserRole;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  tcNo?: string | null;
+  birthYear?: string | null;
+  companyTitle: string;
+  taxNo?: string;
+  taxOffice?: string;
+  address?: string;
+  isVerified?: boolean;
+  subscriptionPlan?: SubscriptionPlan;
+  vehicleCount?: number;
+  onboarding: OnboardingStatus;
+}
 
 export interface User {
   id: string;
@@ -36,6 +65,8 @@ export interface User {
   createdAt: string;
   isVerified: boolean;
   subscriptionPlan: SubscriptionPlan;
+  profileCompleted: boolean;
+  onboarding: OnboardingStatus;
 }
 
 export interface Load {
@@ -58,11 +89,16 @@ export interface Load {
 export interface Vehicle {
   id: string;
   plate: string;
-  type: 'tir' | 'kamyon' | 'panelvan' | 'frigo';
+  brand?: string | null;
+  model?: string | null;
+  year?: string | null;
+  type: string;
+  typeEnum?: string;
   capacity: number;
   capacityUnit: 'kg' | 'ton';
-  status: 'active' | 'available' | 'maintenance';
-  ownerId: string;
+  capacityLabel?: string;
+  status: 'available' | 'active' | 'maintenance';
+  ownerId?: string;
 }
 
 export interface Offer {
@@ -86,4 +122,11 @@ export interface Transport {
   eta?: string;
   startedAt: string;
   completedAt?: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  errors?: Record<string, string[]>;
 }

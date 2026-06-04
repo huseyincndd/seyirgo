@@ -8,6 +8,7 @@ import {
   MapPin, Calendar
 } from 'lucide-react';
 import { CITIES, getDefaultDistricts, CUSTOMS_GATES } from '@/app/data/locations';
+import { useSession } from '@/app/providers/SessionProvider';
 
 // ─── KATEGORİLER (Yük Veren Perspektifi) ─────────────────────────────────────
 const CATEGORIES = [
@@ -116,8 +117,8 @@ interface FormState {
 }
 
 const initialForm: FormState = {
-  firma: 'Doğan Tekstil A.Ş.', yetkiliAdi: 'Ahmet Doğan', tcKimlik: '',
-  mail: 'ahmet@dogantekstil.com', telefon: '0532 XXX XX XX', faturaAdres: '',
+  firma: '', yetkiliAdi: '', tcKimlik: '',
+  mail: '', telefon: '', faturaAdres: '',
   yukCinsi: '', yuklemeTarihi: '',
   kalkisUlke: 'Türkiye', kalkisSehir: '', kalkisIlce: '', cikisGumruk: '', kalkisPostaKod: '',
   varisUlke: 'Türkiye', varisSehir: '', varisIlce: '', varisGumruk: '', varisPostaKod: '',
@@ -182,9 +183,23 @@ const inputCls = "w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl 
 // ─── ANA SAYFA ─────────────────────────────────────────────────────────────────
 export default function YeniIlanPage() {
   const router = useRouter();
+  const { user } = useSession();
   const [selectedCat, setSelectedCat] = useState<CategoryId | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<FormState>(initialForm);
+
+  React.useEffect(() => {
+    if (!user) return;
+    setForm((prev) => ({
+      ...prev,
+      firma: user.companyTitle || prev.firma,
+      yetkiliAdi: `${user.firstName} ${user.lastName}`.trim(),
+      mail: user.email || prev.mail,
+      telefon: user.phone || prev.telefon,
+      faturaAdres: user.address || prev.faturaAdres,
+      tcKimlik: user.tcNo || prev.tcKimlik,
+    }));
+  }, [user]);
   const [captcha, setCaptcha] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
