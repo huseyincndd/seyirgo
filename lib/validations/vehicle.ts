@@ -48,6 +48,14 @@ export const createVehicleSchema = z.object({
     .positive('Kapasite 0\'dan büyük olmalı')
     .max(120, 'Kapasite en fazla 120 ton olabilir'),
   capacityUnit: z.enum(['kg', 'ton']).default('ton'),
+  bodyType: z.string().optional().nullable(),
+  trailerType: z.string().optional().nullable(),
+  length: z.number().optional().nullable(),
+  width: z.number().optional().nullable(),
+  height: z.number().optional().nullable(),
+  volume: z.number().optional().nullable(),
+  features: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
 });
 
 export const updateVehicleSchema = createVehicleSchema

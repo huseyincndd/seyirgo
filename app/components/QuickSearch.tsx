@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import { Search, MapPin, Truck, Package, ArrowRight, Loader2 } from 'lucide-react';
-import { CITIES } from '@/app/data/locations';
+import { TURKEY_CITIES, DISTRICTS } from '@/app/data/locations';
 import Link from 'next/link';
 
 export default function QuickSearch() {
@@ -96,7 +96,7 @@ export default function QuickSearch() {
                       className={`${inputCls} appearance-none`}
                     >
                       <option value="">Tüm Şehirler</option>
-                      {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      {TURKEY_CITIES.map((c: string) => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                 </div>
@@ -122,7 +122,7 @@ export default function QuickSearch() {
                       className={`${inputCls} appearance-none`}
                     >
                       <option value="">Tüm Şehirler</option>
-                      {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      {TURKEY_CITIES.map((c: string) => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                 </div>

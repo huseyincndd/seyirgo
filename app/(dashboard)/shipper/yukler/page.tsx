@@ -1,13 +1,14 @@
-
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, Plus, Package, MapPin, Calendar, Truck,
   CheckCircle, Clock, XCircle, ChevronRight, Trash2,
-  Edit3, Search
+  Edit3, Search, Loader2, Eye
 } from 'lucide-react';
+import { apiFetch } from '@/lib/client-api';
+import type { SerializedCargoListing } from '@/lib/cargo-listings/serialize';
 
 const CAT_MAP: Record<string, { label: string; color: string }> = {
   '1A': { label: 'Karayolu', color: 'bg-blue-100 text-blue-700' },
@@ -21,32 +22,55 @@ const CAT_MAP: Record<string, { label: string; color: string }> = {
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: React.ComponentType<{size: number}> }> = {
   active:   { label: 'Yayında', color: 'bg-green-50 text-green-700 border-green-100', icon: CheckCircle },
-  pending:  { label: 'İncelemede', color: 'bg-yellow-50 text-yellow-700 border-yellow-100', icon: Clock },
+  paused:   { label: 'Durduruldu', color: 'bg-yellow-50 text-yellow-700 border-yellow-100', icon: Clock },
   expired:  { label: 'Süresi Doldu', color: 'bg-red-50 text-red-600 border-red-100', icon: XCircle },
 };
 
 export default function YuklerPage() {
   const router = useRouter();
-  const [loads, setLoads] = useState<
-    { id: string; title: string; from: string; to: string; status: string; matches: number; date: string; cat: string; fromSub?: string; toSub?: string; weight?: string; vehicle?: string }[]
-  >([]);
+  const [loads, setLoads] = useState<SerializedCargoListing[]>([]);
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  const loadListings = useCallback(async () => {
+    setLoading(true);
+    const res = await apiFetch<SerializedCargoListing[]>('/api/shipper/listings');
+    if (res.success && res.data) {
+      setLoads(res.data);
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadListings();
+  }, [loadListings]);
 
   const filtered = loads.filter(l =>
     search === '' ||
-    l.title.toLowerCase().includes(search.toLowerCase()) ||
-    l.from.toLowerCase().includes(search.toLowerCase()) ||
-    l.to.toLowerCase().includes(search.toLowerCase())
+    l.details.yukCinsi?.toLowerCase().includes(search.toLowerCase()) ||
+    l.route.from.toLowerCase().includes(search.toLowerCase()) ||
+    l.route.to.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Bu ilanı silmek istediğinize emin misiniz?')) {
-      setLoads(prev => prev.filter(l => l.id !== id));
+      const res = await apiFetch(`/api/shipper/listings/${id}`, { method: 'DELETE' });
+      if (res.success) {
+        setLoads(prev => prev.filter(l => l.id !== id));
+      }
     }
   };
 
   const activeCount = loads.filter(l => l.status === 'active').length;
-  const totalMatches = loads.reduce((s, l) => s + l.matches, 0);
+  const totalMatches = 0; // Eşleşme sistemi ileride bağlanacak
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F8F9FC]">
+        <Loader2 className="animate-spin text-brand-dark" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F9FC] text-slate-800 pb-20">
@@ -106,8 +130,8 @@ export default function YuklerPage() {
         ) : (
           <div className="space-y-3">
             {filtered.map(load => {
-              const status = STATUS_MAP[load.status];
-              const cat = CAT_MAP[load.cat];
+              const status = STATUS_MAP[load.status as keyof typeof STATUS_MAP] || STATUS_MAP['active'];
+              const cat = CAT_MAP[load.categoryId as keyof typeof CAT_MAP] || CAT_MAP['1A'];
               const StatusIcon = status.icon;
               return (
                 <div key={load.id} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
@@ -115,8 +139,8 @@ export default function YuklerPage() {
                     {/* Top */}
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg ${cat.color}`}>{load.cat} — {cat.label}</span>
-                        <span className="text-xs text-gray-400 font-mono">{load.id}</span>
+                        <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg ${cat.color}`}>{load.categoryId} — {cat.label}</span>
+                        <span className="text-xs text-gray-400 font-mono">{load.id.slice(0,8)}...</span>
                       </div>
                       <span className={`flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border flex-shrink-0 ${status.color}`}>
                         <StatusIcon size={12} /> {status.label}
@@ -124,53 +148,47 @@ export default function YuklerPage() {
                     </div>
 
                     {/* Başlık */}
-                    <div className="font-black text-slate-900 text-lg mb-3">{load.title}</div>
+                    <div className="font-black text-slate-900 text-lg mb-3">{load.details?.yukCinsi || 'Belirtilmemiş Yük'}</div>
 
                     {/* Route */}
                     <div className="flex items-center gap-3 mb-4">
                       <div className="flex items-center gap-1 text-sm font-bold text-gray-500">
-                        <MapPin size={14} className="text-green-500" /> {load.from}
-                        <span className="text-xs text-gray-400 font-normal">{load.fromSub}</span>
+                        <MapPin size={14} className="text-green-500" /> {load.route.from}
                       </div>
                       <ChevronRight size={14} className="text-gray-300" />
                       <div className="flex items-center gap-1 text-sm font-bold text-slate-900">
-                        <MapPin size={14} className="text-brand-orange" /> {load.to}
-                        <span className="text-xs text-gray-400 font-normal">{load.toSub}</span>
+                        <MapPin size={14} className="text-brand-orange" /> {load.route.to}
                       </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="flex items-center gap-3 mb-4 text-xs font-semibold text-gray-400">
+                      <span className="flex items-center gap-1 text-green-600 bg-green-50 px-2 py-1 rounded-md"><Eye size={12} /> {load.viewCount || 0} görüntülenme</span>
+                      <span className="flex items-center gap-1 text-brand-orange bg-orange-50 px-2 py-1 rounded-md"><Truck size={12} /> {load.matchCount || 0} taşıyıcı havuzunda</span>
                     </div>
 
                     {/* Details */}
                     <div className="grid grid-cols-3 gap-3 mb-4">
                       <div className="bg-gray-50 rounded-xl p-3">
                         <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Ağırlık</div>
-                        <div className="text-xs font-bold text-slate-700">{load.weight}</div>
+                        <div className="text-xs font-bold text-slate-700">{load.details?.agirlik || '-'}</div>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-3">
-                        <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Araç</div>
-                        <div className="text-xs font-bold text-slate-700">{load.vehicle}</div>
+                        <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Araç Tercihi</div>
+                        <div className="text-xs font-bold text-slate-700 line-clamp-1">{load.details?.tasitTipi?.[0] || 'Farketmez'}</div>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-3">
                         <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Tarih</div>
-                        <div className="text-xs font-bold text-slate-700 flex items-center gap-1">
-                          <Calendar size={11} className="text-brand-orange" /> {load.date}
+                        <div className="text-xs font-bold text-slate-700 flex items-center gap-1 line-clamp-1">
+                          <Calendar size={11} className="text-brand-orange shrink-0" /> {load.details?.yuklemeTarihi || '-'}
                         </div>
                       </div>
                     </div>
 
                     {/* Footer */}
                     <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                      {load.matches > 0 ? (
-                        <div className="flex items-center gap-2 text-sm font-bold text-brand-orange">
-                          <Truck size={15} />
-                          {load.matches} taşıyıcı eşleşti
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400">Henüz eşleşme yok</span>
-                      )}
+                      <span className="text-xs text-gray-400">Henüz eşleşme yok</span>
                       <div className="flex items-center gap-2">
-                        <button className="p-2 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-600 transition-colors">
-                          <Edit3 size={15} />
-                        </button>
                         <button onClick={() => handleDelete(load.id)} className="p-2 hover:bg-red-50 rounded-lg text-gray-400 hover:text-red-500 transition-colors">
                           <Trash2 size={15} />
                         </button>

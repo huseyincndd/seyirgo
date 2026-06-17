@@ -3,25 +3,41 @@ import { z } from 'zod';
 export const createCarrierListingSchema = z
   .object({
     vehicleId: z.string().min(1, 'Araç seçin'),
-    originCity: z.string().min(2, 'Kalkış ili seçin'),
-    destinationType: z.enum(['SPECIFIC_CITY', 'TURKEY_WIDE']),
-    destinationCity: z.string().optional(),
-    note: z.string().max(300).optional(),
-    availableFrom: z.string().optional(),
+    originCountry: z.string().default('Türkiye'),
+    originCity: z.string().min(1, 'Kalkış ili seçin'),
+    originDistrict: z.string().min(1, 'Kalkış ilçesi seçin'),
+    destinationType: z.enum(['SPECIFIC_CITY', 'SPECIFIC_LOCATION', 'REGION', 'TURKEY_WIDE', 'INTERNATIONAL']),
+    destinationCountry: z.string().optional().nullable(),
+    destinationCity: z.string().optional().nullable(),
+    destinationDistrict: z.string().optional().nullable(),
+    destinationRegion: z.string().optional().nullable(),
+    destinationExcludedRegions: z.array(z.string()).optional().default([]),
+    note: z.string().max(300).optional().nullable(),
+    availableFrom: z.string().optional().nullable(),
   })
   .superRefine((data, ctx) => {
-    if (data.destinationType === 'SPECIFIC_CITY') {
+    if (data.destinationType === 'SPECIFIC_LOCATION' || data.destinationType === 'SPECIFIC_CITY') {
       if (!data.destinationCity?.trim()) {
         ctx.addIssue({
           code: 'custom',
           message: 'Varış ili seçin',
           path: ['destinationCity'],
         });
-      } else if (data.destinationCity === data.originCity) {
+      }
+    } else if (data.destinationType === 'REGION') {
+      if (!data.destinationRegion?.trim()) {
         ctx.addIssue({
           code: 'custom',
-          message: 'Varış ili kalkış ile aynı olamaz',
-          path: ['destinationCity'],
+          message: 'Bölge seçin',
+          path: ['destinationRegion'],
+        });
+      }
+    } else if (data.destinationType === 'INTERNATIONAL') {
+      if (!data.destinationCountry?.trim()) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Ülke seçin',
+          path: ['destinationCountry'],
         });
       }
     }

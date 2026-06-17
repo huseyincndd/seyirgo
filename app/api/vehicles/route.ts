@@ -18,6 +18,14 @@ function serializeVehicle(v: {
   type: keyof typeof VEHICLE_TYPE_ENUM_TO_LABEL;
   capacity: number;
   capacityUnit: string;
+  bodyType: string | null;
+  trailerType: string | null;
+  length: number | null;
+  width: number | null;
+  height: number | null;
+  volume: number | null;
+  features: string[];
+  isActive: boolean;
   status: string;
   createdAt: Date;
 }) {
@@ -32,6 +40,14 @@ function serializeVehicle(v: {
     capacity: v.capacity,
     capacityUnit: v.capacityUnit,
     capacityLabel: `${v.capacity} ${v.capacityUnit === 'ton' ? 'ton' : 'kg'}`,
+    bodyType: v.bodyType,
+    trailerType: v.trailerType,
+    length: v.length,
+    width: v.width,
+    height: v.height,
+    volume: v.volume,
+    features: v.features,
+    isActive: v.isActive,
     status: v.status.toLowerCase(),
     createdAt: v.createdAt.toISOString(),
   };
@@ -99,6 +115,14 @@ export async function POST(request: NextRequest) {
         type: data.type,
         capacity: data.capacity,
         capacityUnit: data.capacityUnit,
+        bodyType: data.bodyType ?? null,
+        trailerType: data.trailerType ?? null,
+        length: data.length ?? null,
+        width: data.width ?? null,
+        height: data.height ?? null,
+        volume: data.volume ?? null,
+        features: data.features ?? [],
+        isActive: data.isActive ?? false,
         ownerId: auth.session.userId,
       },
     });

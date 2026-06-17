@@ -71,12 +71,15 @@ export async function POST(request: NextRequest) {
       data: {
         ownerId: auth.session.userId,
         vehicleId: data.vehicleId,
+        originCountry: data.originCountry.trim(),
         originCity: data.originCity.trim(),
+        originDistrict: data.originDistrict.trim(),
         destinationType: data.destinationType,
-        destinationCity:
-          data.destinationType === 'SPECIFIC_CITY'
-            ? data.destinationCity?.trim() ?? null
-            : null,
+        destinationCountry: data.destinationCountry?.trim() || null,
+        destinationCity: data.destinationCity?.trim() || null,
+        destinationDistrict: data.destinationDistrict?.trim() || null,
+        destinationRegion: data.destinationRegion?.trim() || null,
+        destinationExcludedRegions: data.destinationExcludedRegions || [],
         note: data.note?.trim() || null,
         availableFrom,
         status: 'ACTIVE',

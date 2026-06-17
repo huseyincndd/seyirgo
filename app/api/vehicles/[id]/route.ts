@@ -20,6 +20,14 @@ function serializeVehicle(v: {
   type: keyof typeof VEHICLE_TYPE_ENUM_TO_LABEL;
   capacity: number;
   capacityUnit: string;
+  bodyType: string | null;
+  trailerType: string | null;
+  length: number | null;
+  width: number | null;
+  height: number | null;
+  volume: number | null;
+  features: string[];
+  isActive: boolean;
   status: string;
   createdAt: Date;
 }) {
@@ -34,6 +42,14 @@ function serializeVehicle(v: {
     capacity: v.capacity,
     capacityUnit: v.capacityUnit,
     capacityLabel: `${v.capacity} ${v.capacityUnit === 'ton' ? 'ton' : 'kg'}`,
+    bodyType: v.bodyType,
+    trailerType: v.trailerType,
+    length: v.length,
+    width: v.width,
+    height: v.height,
+    volume: v.volume,
+    features: v.features,
+    isActive: v.isActive,
     status: v.status.toLowerCase(),
     createdAt: v.createdAt.toISOString(),
   };
@@ -88,6 +104,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         ...(data.type !== undefined && { type: data.type }),
         ...(data.capacity !== undefined && { capacity: data.capacity }),
         ...(data.capacityUnit !== undefined && { capacityUnit: data.capacityUnit }),
+        ...(data.bodyType !== undefined && { bodyType: data.bodyType ?? null }),
+        ...(data.trailerType !== undefined && { trailerType: data.trailerType ?? null }),
+        ...(data.length !== undefined && { length: data.length ?? null }),
+        ...(data.width !== undefined && { width: data.width ?? null }),
+        ...(data.height !== undefined && { height: data.height ?? null }),
+        ...(data.volume !== undefined && { volume: data.volume ?? null }),
+        ...(data.features !== undefined && { features: data.features ?? [] }),
+        ...(data.isActive !== undefined && { isActive: data.isActive }),
         ...(data.status !== undefined && { status: data.status }),
       },
     });

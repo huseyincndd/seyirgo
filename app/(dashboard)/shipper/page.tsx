@@ -1,15 +1,31 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Package, Truck, Navigation, CheckCircle2, Plus, Loader2 } from 'lucide-react';
+import { Package, Truck, Navigation, CheckCircle2, Plus, Loader2, MapPin, ChevronRight, Calendar, Eye } from 'lucide-react';
 import { useSession } from '@/app/providers/SessionProvider';
 import DashboardPageHeader from '@/app/components/dashboard/DashboardPageHeader';
 import EmptyPanel from '@/app/components/dashboard/EmptyPanel';
+import { apiFetch } from '@/lib/client-api';
+import type { SerializedCargoListing } from '@/lib/cargo-listings/serialize';
 
 export default function ShipperDashboard() {
-  const { user, loading } = useSession();
+  const { user, loading: authLoading } = useSession();
+  const [loads, setLoads] = useState<SerializedCargoListing[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (loading || !user) {
+  useEffect(() => {
+    async function fetchData() {
+      const res = await apiFetch<SerializedCargoListing[]>('/api/shipper/listings');
+      if (res.success && res.data) {
+        setLoads(res.data);
+      }
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
+
+  if (authLoading || !user) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <Loader2 className="animate-spin text-brand-dark" size={36} />
@@ -17,12 +33,18 @@ export default function ShipperDashboard() {
     );
   }
 
+  const activeCount = loads.filter(l => l.status === 'active').length;
+  const totalMatches = loads.reduce((sum, l) => sum + (l.matchCount || 0), 0);
+  const totalViews = loads.reduce((sum, l) => sum + (l.viewCount || 0), 0);
+
   const stats = [
-    { label: 'Aktif İlanlarım', value: '0', sub: 'Henüz ilan yok', icon: Package, color: 'bg-blue-50 text-brand-dark' },
-    { label: 'Eşleşen Taşıyıcı', value: '0', sub: 'Eşleşme bekleniyor', icon: Truck, color: 'bg-orange-50 text-brand-orange' },
+    { label: 'Aktif İlanlarım', value: loading ? '-' : activeCount.toString(), sub: 'Sistemde yayında', icon: Package, color: 'bg-blue-50 text-brand-dark' },
+    { label: 'Eşleşen Taşıyıcı', value: loading ? '-' : totalMatches.toString(), sub: `${totalViews} kez görüntülendi`, icon: Truck, color: 'bg-orange-50 text-brand-orange' },
     { label: 'Aktif Taşıma', value: '0', sub: 'Devam eden yok', icon: Navigation, color: 'bg-green-50 text-green-600' },
     { label: 'Tamamlanan İş', value: '0', sub: 'Bu ay', icon: CheckCircle2, color: 'bg-slate-50 text-slate-600' },
   ];
+
+  const recentLoads = loads.slice(0, 3); // Son 3 ilan
 
   return (
     <div className="min-h-screen bg-[#F8F9FC] text-slate-800 pb-20">
@@ -68,12 +90,50 @@ export default function ShipperDashboard() {
                 <h3 className="font-bold text-slate-900">Son İlanlarım</h3>
                 <Link href="/shipper/yukler" className="text-xs font-bold text-brand-dark hover:underline">Tümü</Link>
               </div>
-              <EmptyPanel
-                icon={Package}
-                title="Henüz ilanınız yok"
-                description="İlk yük ilanınızı oluşturarak taşıyıcılarla eşleşmeye başlayın."
-                action={{ label: 'İlan Ver', href: '/shipper/yeni-ilan' }}
-              />
+              
+              {loading ? (
+                <div className="p-10 flex justify-center"><Loader2 className="animate-spin text-gray-400" /></div>
+              ) : recentLoads.length === 0 ? (
+                <EmptyPanel
+                  icon={Package}
+                  title="Henüz ilanınız yok"
+                  description="İlk yük ilanınızı oluşturarak taşıyıcılarla eşleşmeye başlayın."
+                  action={{ label: 'İlan Ver', href: '/shipper/yeni-ilan' }}
+                />
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {recentLoads.map(load => (
+                    <div key={load.id} className="p-5 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-blue-600">
+                            {load.categoryId}
+                          </span>
+                          <span className="font-bold text-slate-900 text-sm">
+                            {load.details?.yukCinsi || 'Belirtilmemiş Yük'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center gap-1 text-xs font-bold text-gray-500">
+                            <MapPin size={12} className="text-green-500" /> {load.route.from}
+                          </div>
+                          <ChevronRight size={12} className="text-gray-300" />
+                          <div className="flex items-center gap-1 text-xs font-bold text-slate-900">
+                            <MapPin size={12} className="text-brand-orange" /> {load.route.to}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 mt-2 text-xs font-semibold text-gray-400">
+                          <span className="flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded"><Eye size={12} /> {load.viewCount || 0} görüntülenme</span>
+                          <span className="flex items-center gap-1 text-brand-orange bg-orange-50 px-1.5 py-0.5 rounded"><Truck size={12} /> {load.matchCount || 0} taşıyıcı havuzunda</span>
+                        </div>
+                      </div>
+                      <Link href="/shipper/yukler" className="p-2 hover:bg-white rounded-lg border border-transparent hover:border-gray-200 hover:shadow-sm transition-all text-gray-400 hover:text-brand-dark">
+                        <ChevronRight size={16} />
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -85,7 +145,7 @@ export default function ShipperDashboard() {
             <Link href="/shipper/yukler" className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col items-center text-center gap-2 hover:shadow-md transition-all">
               <Package size={22} className="text-brand-dark" />
               <span className="font-black text-sm">Yüklerim</span>
-              <span className="text-[11px] text-gray-400">0 ilan</span>
+              <span className="text-[11px] text-gray-400">{loading ? '-' : loads.length} ilan</span>
             </Link>
             <Link href="/shipper/aktif-tasimalar" className="bg-white border border-gray-200 rounded-2xl p-5 flex flex-col items-center text-center gap-2 hover:shadow-md transition-all">
               <Truck size={22} className="text-green-600" />

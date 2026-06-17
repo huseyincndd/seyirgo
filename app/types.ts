@@ -97,6 +97,14 @@ export interface Vehicle {
   capacity: number;
   capacityUnit: 'kg' | 'ton';
   capacityLabel?: string;
+  bodyType?: string | null;
+  trailerType?: string | null;
+  length?: number | null;
+  width?: number | null;
+  height?: number | null;
+  volume?: number | null;
+  features?: string[];
+  isActive?: boolean;
   status: 'available' | 'active' | 'maintenance';
   ownerId?: string;
 }

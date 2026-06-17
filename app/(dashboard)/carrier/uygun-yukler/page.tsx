@@ -1,29 +1,24 @@
-
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, Package, MapPin, Calendar, Truck, Phone, Eye,
-  X, CheckCircle, ArrowRight, Filter, Search, Info, Lock
+  X, CheckCircle, ArrowRight, Filter, Search, Info, Lock, Loader2
 } from 'lucide-react';
+import { apiFetch } from '@/lib/client-api';
+import type { SerializedCargoListing } from '@/lib/cargo-listings/serialize';
 
-type LoadItem = {
-  id: number;
-  cat: string;
-  from: string;
-  fromSub: string;
-  to: string;
-  toSub: string;
-  type: string;
-  weight: string;
-  date: string;
-  vehicle: string;
-  match: number;
-  shipper: { name: string; company: string; phone: string; email: string };
-  viewed: boolean;
+type MatchItem = SerializedCargoListing & {
+  matchedVehicle: string;
+  matchScore: number;
+  shipper: {
+    firstName: string;
+    lastName: string;
+    companyTitle: string;
+    phone: string;
+    email: string;
+  };
 };
-
-const LOADS: LoadItem[] = [];
 
 const CAT_LABELS: Record<string, string> = {
   'Tümü': 'Tümü',
@@ -40,24 +35,49 @@ const CAT_LABELS: Record<string, string> = {
 
 export default function UygunYuklerPage() {
   const router = useRouter();
+  const [loads, setLoads] = useState<MatchItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [catFilter, setCatFilter] = useState('Tümü');
   const [search, setSearch] = useState('');
-  const [selectedLoad, setSelectedLoad] = useState<typeof LOADS[0] | null>(null);
-  const [viewedIds, setViewedIds] = useState<number[]>([3]);
+  const [selectedLoad, setSelectedLoad] = useState<MatchItem | null>(null);
+  const [viewedIds, setViewedIds] = useState<string[]>([]);
 
-  const filtered = LOADS.filter(l => {
-    const matchCat = catFilter === 'Tümü' || l.cat === catFilter;
+  useEffect(() => {
+    async function fetchMatches() {
+      const res = await apiFetch<MatchItem[]>('/api/carrier/matches');
+      if (res.success && res.data) {
+        setLoads(res.data);
+      }
+      setLoading(false);
+    }
+    fetchMatches();
+  }, []);
+
+  const filtered = loads.filter(l => {
+    const matchCat = catFilter === 'Tümü' || l.categoryId === catFilter;
     const matchSearch = search === '' ||
-      l.from.toLowerCase().includes(search.toLowerCase()) ||
-      l.to.toLowerCase().includes(search.toLowerCase()) ||
-      l.type.toLowerCase().includes(search.toLowerCase());
+      l.route.from.toLowerCase().includes(search.toLowerCase()) ||
+      l.route.to.toLowerCase().includes(search.toLowerCase()) ||
+      (l.details?.yukCinsi || '').toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   });
 
-  const handleViewInfo = (load: typeof LOADS[0]) => {
+  const handleViewInfo = async (load: MatchItem) => {
     setSelectedLoad(load);
-    setViewedIds(prev => [...prev, load.id]);
+    if (!viewedIds.includes(load.id)) {
+      setViewedIds(prev => [...prev, load.id]);
+      // Bildirimi API'ye gönder (viewCount artar)
+      await apiFetch(`/api/shipper/listings/${load.id}/view`, { method: 'POST' });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F9FC] flex items-center justify-center">
+        <Loader2 className="animate-spin text-brand-dark" size={36} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F9FC] text-slate-800 pb-20">
@@ -84,7 +104,7 @@ export default function UygunYuklerPage() {
         <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
           <Info size={18} className="text-blue-500 flex-shrink-0 mt-0.5" />
           <p className="text-sm text-blue-800 leading-relaxed">
-            İlanınıza uyan yük taleplerini görüntülüyorsunuz.
+            Araç ilanlarınıza uyan tüm yük taleplerini görüntülüyorsunuz.
             <span className="font-bold"> "Bilgileri Gör"</span> butonuna basarak yük sahibinin iletişim bilgilerini açabilir, doğrudan arayabilirsiniz.
           </p>
         </div>
@@ -120,7 +140,7 @@ export default function UygunYuklerPage() {
           <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
             <Package size={48} className="text-gray-200 mx-auto mb-4" />
             <div className="font-bold text-gray-400">Eşleşen yük bulunamadı</div>
-            <p className="text-sm text-gray-400 mt-1">Farklı bir kategori veya arama terimi deneyin.</p>
+            <p className="text-sm text-gray-400 mt-1">Sistem rotanıza uygun bir yük ilanı bulamadı. Yeni bir rota ekleyebilir veya daha sonra tekrar kontrol edebilirsiniz.</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -134,20 +154,20 @@ export default function UygunYuklerPage() {
                     {/* Top Row */}
                     <div className="flex items-start justify-between mb-4 gap-3">
                       <div className="flex items-center gap-3 flex-wrap">
-                        <span className="bg-brand-dark text-white text-[10px] font-black px-2 py-1 rounded-lg">{load.cat}</span>
+                        <span className="bg-brand-dark text-white text-[10px] font-black px-2 py-1 rounded-lg">{load.categoryId}</span>
                         <div className="flex items-center gap-2 text-base font-black text-slate-900">
-                          <span>{load.from}</span>
+                          <span>{load.route.from}</span>
                           <ArrowRight size={16} className="text-gray-300" />
-                          <span className="text-brand-dark">{load.to}</span>
+                          <span className="text-brand-dark">{load.route.to}</span>
                         </div>
                         {isViewed && (
                           <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
-                            <Eye size={11} /> Görüntülendi
+                            <Eye size={11} /> İletişime Geçildi
                           </span>
                         )}
                       </div>
                       <div className="flex-shrink-0 bg-green-50 border border-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                        %{load.match} eşleşme
+                        %{load.matchScore} eşleşme
                       </div>
                     </div>
 
@@ -155,29 +175,22 @@ export default function UygunYuklerPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                       <div className="bg-gray-50 rounded-xl p-3">
                         <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Yük Tipi</div>
-                        <div className="text-sm font-bold text-slate-700">{load.type}</div>
+                        <div className="text-sm font-bold text-slate-700 truncate" title={load.details?.yukCinsi}>{load.details?.yukCinsi || 'Belirtilmemiş'}</div>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-3">
                         <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Ağırlık</div>
-                        <div className="text-sm font-bold text-slate-700">{load.weight}</div>
+                        <div className="text-sm font-bold text-slate-700">{load.details?.agirlik ? `${load.details.agirlik} Ton` : 'Belirtilmemiş'}</div>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-3">
-                        <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">İstenen Araç</div>
-                        <div className="text-sm font-bold text-slate-700">{load.vehicle}</div>
+                        <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Araç Eşleşmesi</div>
+                        <div className="text-sm font-bold text-slate-700">{load.matchedVehicle}</div>
                       </div>
                       <div className="bg-gray-50 rounded-xl p-3">
                         <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Yükleme Tarihi</div>
-                        <div className="text-sm font-bold text-slate-700 flex items-center gap-1">
-                          <Calendar size={13} className="text-brand-orange" /> {load.date}
+                        <div className="text-sm font-bold text-slate-700 flex items-center gap-1 truncate" title={load.details?.yuklemeTarihi || 'Belirtilmemiş'}>
+                          <Calendar size={13} className="text-brand-orange" /> {load.details?.yuklemeTarihi || 'Belirtilmemiş'}
                         </div>
                       </div>
-                    </div>
-
-                    {/* Konum detayı */}
-                    <div className="flex items-center gap-4 text-xs text-gray-500 mb-4">
-                      <span className="flex items-center gap-1"><MapPin size={12} className="text-green-500" /> {load.from}, {load.fromSub}</span>
-                      <ArrowRight size={12} className="text-gray-300" />
-                      <span className="flex items-center gap-1"><MapPin size={12} className="text-brand-orange" /> {load.to}, {load.toSub}</span>
                     </div>
 
                     {/* CTA */}
@@ -207,7 +220,7 @@ export default function UygunYuklerPage() {
               <div>
                 <div className="font-black text-lg">İletişim Bilgileri</div>
                 <div className="text-xs text-gray-400 mt-0.5">
-                  {selectedLoad.from} → {selectedLoad.to} • {selectedLoad.type}
+                  {selectedLoad.route.from} → {selectedLoad.route.to} • {selectedLoad.details?.yukCinsi}
                 </div>
               </div>
               <button onClick={() => setSelectedLoad(null)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
@@ -222,7 +235,7 @@ export default function UygunYuklerPage() {
               <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-2xl p-4">
                 <CheckCircle size={24} className="text-green-500 flex-shrink-0" />
                 <div className="text-sm text-green-800">
-                  <span className="font-bold">İletişim bilgileri açıldı.</span> Yük sahibiyle doğrudan iletişime geçebilirsiniz.
+                  <span className="font-bold">İletişim bilgileri açıldı.</span> Yük sahibine ilanı Seyirgo üzerinden gördüğünüzü belirterek teklifinizi sunabilirsiniz.
                 </div>
               </div>
 
@@ -230,8 +243,8 @@ export default function UygunYuklerPage() {
               <div className="space-y-3">
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Yük Sahibi</div>
-                  <div className="font-black text-slate-900 text-lg">{selectedLoad.shipper.name}</div>
-                  <div className="text-sm text-gray-500">{selectedLoad.shipper.company}</div>
+                  <div className="font-black text-slate-900 text-lg">{selectedLoad.shipper.firstName} {selectedLoad.shipper.lastName}</div>
+                  {selectedLoad.shipper.companyTitle && <div className="text-sm text-gray-500">{selectedLoad.shipper.companyTitle}</div>}
                 </div>
 
                 <a href={`tel:${selectedLoad.shipper.phone}`}
@@ -245,27 +258,22 @@ export default function UygunYuklerPage() {
                     <div className="font-black text-slate-900 text-xl tracking-wide">{selectedLoad.shipper.phone}</div>
                   </div>
                 </a>
-
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">E-posta</div>
-                  <div className="font-bold text-slate-700">{selectedLoad.shipper.email}</div>
-                </div>
               </div>
 
               {/* Yük Özeti */}
               <div className="border-t border-gray-100 pt-4">
-                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Yük Özeti</div>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { label: 'Güzergah', value: `${selectedLoad.from} → ${selectedLoad.to}` },
-                    { label: 'Yük', value: selectedLoad.type },
-                    { label: 'Tarih', value: selectedLoad.date },
-                  ].map((item, i) => (
-                    <div key={i} className="bg-gray-50 rounded-lg p-2.5">
-                      <div className="text-[9px] font-bold text-gray-400 uppercase">{item.label}</div>
-                      <div className="text-xs font-bold text-slate-700 mt-0.5 leading-tight">{item.value}</div>
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">İlan Detayı</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-gray-50 rounded-lg p-2.5">
+                    <div className="text-[9px] font-bold text-gray-400 uppercase">Güzergah</div>
+                    <div className="text-xs font-bold text-slate-700 mt-0.5 leading-tight">{selectedLoad.route.from} → {selectedLoad.route.to}</div>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-2.5">
+                    <div className="text-[9px] font-bold text-gray-400 uppercase">Tarih Esnekliği</div>
+                    <div className="text-xs font-bold text-slate-700 mt-0.5 leading-tight">
+                      {selectedLoad.details?.yuklemeTarihiTipi === 'flexible' ? 'Zamanı Belli Değil' : selectedLoad.details?.yuklemeTarihi || 'Belirtilmemiş'}
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
 

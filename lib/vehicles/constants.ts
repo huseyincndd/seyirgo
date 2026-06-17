@@ -107,3 +107,31 @@ export function getYearOptions(): string[] {
 export function getTypeOption(value: string): VehicleTypeOption | undefined {
   return VEHICLE_TYPE_OPTIONS.find((t) => t.value === value);
 }
+
+export const BODY_TYPES = [
+  'Açık Kasa',
+  'Kapalı Kasa',
+  'Tenteli',
+  'Frigo',
+  'Damper',
+  'Lowbed',
+  'Konteyner Taşıyıcı',
+  'Tanker',
+  'Silobas',
+  'Oto Taşıyıcı',
+  'Canlı Hayvan',
+  'Cam Taşıyıcı',
+];
+
+export const VEHICLE_FEATURES = [
+  'Liftli (Lifty)',
+  'Yandan Açılır',
+  'Üstten Açılır',
+  'ADR (Tehlikeli Madde)',
+  'Askılı Kasa',
+  'Rampa',
+  'Soğutucu Ünite',
+  'Isıtıcı Ünite',
+  'GPS / Araç Takip',
+  'Hassas Süspansiyon',
+];

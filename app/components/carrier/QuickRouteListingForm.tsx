@@ -14,38 +14,37 @@ import {
   Calendar,
   Check,
   ChevronDown,
+  Map,
+  Ban,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/client-api';
-import { CITIES } from '@/app/data/locations';
+import { COUNTRIES, COUNTRIES_WITH_CITIES, TURKEY_CITIES, TURKEY_REGIONS, DISTRICTS } from '@/app/data/locations';
 import type { Vehicle } from '@/app/types';
 import type { SerializedCarrierListing } from '@/lib/carrier-listings/serialize';
 import { RoutePreviewCard } from './RoutePreviewCard';
 
-const POPULAR_CITIES = [
-  'İstanbul',
-  'Ankara',
-  'İzmir',
-  'Bursa',
-  'Antalya',
-  'Adana',
-  'Konya',
-  'Gaziantep',
-  'Kocaeli',
-  'Mersin',
-];
-
-const ALL_CITIES = [...new Set([...POPULAR_CITIES, ...CITIES])];
-
-type DestinationMode = 'SPECIFIC_CITY' | 'TURKEY_WIDE';
+type DestinationMode = 'SPECIFIC_LOCATION' | 'REGION' | 'TURKEY_WIDE' | 'INTERNATIONAL';
 
 export function QuickRouteListingForm() {
   const router = useRouter();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [vehicleId, setVehicleId] = useState('');
+  
+  // Origin states
+  const [originCountry, setOriginCountry] = useState('Türkiye');
   const [originCity, setOriginCity] = useState('');
-  const [destMode, setDestMode] = useState<DestinationMode>('SPECIFIC_CITY');
+  const [originDistrict, setOriginDistrict] = useState('');
+
+  // Destination states
+  const [destMode, setDestMode] = useState<DestinationMode>('SPECIFIC_LOCATION');
+  const [destinationCountry, setDestinationCountry] = useState('');
   const [destinationCity, setDestinationCity] = useState('');
+  const [destinationDistrict, setDestinationDistrict] = useState('');
+  const [destinationRegion, setDestinationRegion] = useState('');
+  const [destinationExcludedRegions, setDestinationExcludedRegions] = useState<string[]>([]);
+
+  // Extras
   const [availableFrom, setAvailableFrom] = useState('');
   const [note, setNote] = useState('');
   const [showExtras, setShowExtras] = useState(false);
@@ -73,15 +72,28 @@ export function QuickRouteListingForm() {
   );
 
   const previewTo = useMemo(() => {
-    if (!originCity) return null;
-    if (destMode === 'TURKEY_WIDE') return 'Türkiye geneli';
-    return destinationCity || null;
-  }, [originCity, destMode, destinationCity]);
+    switch (destMode) {
+      case 'TURKEY_WIDE': return 'Türkiye Geneli';
+      case 'REGION': return destinationRegion ? `${destinationRegion} Bölgesi` : 'Bölge Seçiniz';
+      case 'SPECIFIC_LOCATION': return destinationCity ? `${destinationCity} / ${destinationDistrict || 'Merkez'}` : 'Şehir Seçiniz';
+      case 'INTERNATIONAL': return destinationCountry ? `${destinationCountry} ${destinationCity ? `- ${destinationCity}` : ''}` : 'Ülke Seçiniz';
+      default: return null;
+    }
+  }, [destMode, destinationCity, destinationDistrict, destinationRegion, destinationCountry]);
 
-  const canSubmit =
-    vehicleId &&
-    originCity &&
-    (destMode === 'TURKEY_WIDE' || destinationCity);
+  const canSubmit = useMemo(() => {
+    if (!vehicleId || !originCity || !originDistrict) return false;
+    if (destMode === 'SPECIFIC_LOCATION' && !destinationCity) return false;
+    if (destMode === 'REGION' && !destinationRegion) return false;
+    if (destMode === 'INTERNATIONAL' && !destinationCountry) return false;
+    return true;
+  }, [vehicleId, originCity, originDistrict, destMode, destinationCity, destinationRegion, destinationCountry]);
+
+  const toggleExcludedRegion = (reg: string) => {
+    setDestinationExcludedRegions(prev => 
+      prev.includes(reg) ? prev.filter(r => r !== reg) : [...prev, reg]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,9 +106,15 @@ export function QuickRouteListingForm() {
       method: 'POST',
       body: JSON.stringify({
         vehicleId,
+        originCountry,
         originCity,
+        originDistrict,
         destinationType: destMode,
-        destinationCity: destMode === 'SPECIFIC_CITY' ? destinationCity : undefined,
+        destinationCountry: destMode === 'INTERNATIONAL' ? destinationCountry : undefined,
+        destinationCity: (destMode === 'SPECIFIC_LOCATION' || destMode === 'INTERNATIONAL') ? destinationCity : undefined,
+        destinationDistrict: destMode === 'SPECIFIC_LOCATION' ? destinationDistrict : undefined,
+        destinationRegion: destMode === 'REGION' ? destinationRegion : undefined,
+        destinationExcludedRegions: destMode === 'TURKEY_WIDE' ? destinationExcludedRegions : [],
         availableFrom: availableFrom || undefined,
         note: note.trim() || undefined,
       }),
@@ -164,10 +182,9 @@ export function QuickRouteListingForm() {
           </div>
         )}
 
-        {/* Mobil önizleme */}
         <div className="lg:hidden">
           <RoutePreviewCard
-            from={originCity || null}
+            from={originCity ? `${originCity} / ${originDistrict || 'Merkez'}` : null}
             to={previewTo}
             isTurkeyWide={destMode === 'TURKEY_WIDE'}
             plate={selectedVehicle?.plate}
@@ -176,7 +193,7 @@ export function QuickRouteListingForm() {
           />
         </div>
 
-        {/* Araç */}
+        {/* Araç Seçimi */}
         <section className="bg-white rounded-3xl border border-gray-100/80 shadow-sm shadow-slate-200/40 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50/80 to-white">
             <StepLabel n={1} title="Hangi araç müsait?" />
@@ -229,123 +246,203 @@ export function QuickRouteListingForm() {
                 );
               })}
             </div>
-            {fieldErrors.vehicleId && (
-              <p className="text-xs text-red-600 mt-2 font-semibold">{fieldErrors.vehicleId}</p>
-            )}
           </div>
         </section>
 
-        {/* Güzergah */}
+        {/* Kalkış Yeri */}
         <section className="bg-white rounded-3xl border border-gray-100/80 shadow-sm shadow-slate-200/40 overflow-hidden">
           <div className="px-5 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50/80 to-white">
-            <StepLabel n={2} title="Nereye gidiyorsunuz?" />
+            <StepLabel n={2} title="Kalkış Yeri" />
           </div>
-          <div className="p-5 space-y-5">
-            <div>
-              <label className={labelCls}>Kalkış noktası</label>
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {POPULAR_CITIES.slice(0, 6).map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setOriginCity(c)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-                      originCity === c
-                        ? 'bg-brand-dark text-white shadow-sm'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-              <div className="relative">
-                <MapPin
-                  size={18}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600 pointer-events-none"
-                />
-                <select
-                  value={originCity}
-                  onChange={(e) => setOriginCity(e.target.value)}
-                  className={`${selectCls} pl-11 appearance-none`}
-                  required
-                >
-                  <option value="">İl seçin…</option>
-                  {ALL_CITIES.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                />
-              </div>
-              {fieldErrors.originCity && (
-                <p className="text-xs text-red-600 mt-1.5 font-semibold">{fieldErrors.originCity}</p>
-              )}
-            </div>
-
-            <div>
-              <label className={labelCls}>Varış tercihi</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <DestCard
-                  active={destMode === 'SPECIFIC_CITY'}
-                  onClick={() => setDestMode('SPECIFIC_CITY')}
-                  icon={MapPin}
-                  title="Belirli şehir"
-                  desc="Tek hat · örn. Ankara → İzmir"
-                  accent="dark"
-                />
-                <DestCard
-                  active={destMode === 'TURKEY_WIDE'}
-                  onClick={() => {
-                    setDestMode('TURKEY_WIDE');
-                    setDestinationCity('');
-                  }}
-                  icon={Globe}
-                  title="Türkiye geneli"
-                  desc="Kalkıştan her ile uygun"
-                  accent="orange"
-                />
-              </div>
-
-              {destMode === 'SPECIFIC_CITY' && (
-                <div className="mt-3 relative animate-in fade-in slide-in-from-top-1 duration-200">
-                  <MapPin
-                    size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-orange pointer-events-none"
-                  />
+          <div className="p-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className={labelCls}>Kalkış İli</label>
+                <div className="relative">
+                  <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600 pointer-events-none" />
                   <select
-                    value={destinationCity}
-                    onChange={(e) => setDestinationCity(e.target.value)}
-                    className={`${selectCls} pl-11 appearance-none`}
+                    value={originCity}
+                    onChange={(e) => {
+                      setOriginCity(e.target.value);
+                      setOriginDistrict('');
+                    }}
+                    className={`${selectCls} pl-11`}
                     required
                   >
-                    <option value="">Varış ili…</option>
-                    {ALL_CITIES.filter((c) => c !== originCity).map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
+                    <option value="">İl seçin…</option>
+                    {TURKEY_CITIES.map((c) => (
+                      <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
-                  <ChevronDown
-                    size={16}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-                  />
+                  <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>Kalkış İlçesi</label>
+                <div className="relative">
+                  <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 pointer-events-none" />
+                  <select
+                    value={originDistrict}
+                    onChange={(e) => setOriginDistrict(e.target.value)}
+                    className={`${selectCls} pl-11`}
+                    required
+                    disabled={!originCity}
+                  >
+                    <option value="">İlçe seçin…</option>
+                    {originCity && DISTRICTS[originCity]?.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+            {fieldErrors.originCity && <p className="text-xs text-red-600 mt-1.5 font-semibold">{fieldErrors.originCity}</p>}
+          </div>
+        </section>
+
+        {/* Varış Yeri */}
+        <section className="bg-white rounded-3xl border border-gray-100/80 shadow-sm shadow-slate-200/40 overflow-hidden">
+          <div className="px-5 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50/80 to-white">
+            <StepLabel n={3} title="Nereye Gidiyorsunuz?" />
+          </div>
+          <div className="p-5 space-y-6">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <DestCard active={destMode === 'SPECIFIC_LOCATION'} onClick={() => setDestMode('SPECIFIC_LOCATION')} icon={MapPin} title="Belirli Konum" desc="Şehir/İlçe" />
+              <DestCard active={destMode === 'REGION'} onClick={() => setDestMode('REGION')} icon={Map} title="Bölgeye" desc="Marmara, Ege vb." />
+              <DestCard active={destMode === 'TURKEY_WIDE'} onClick={() => setDestMode('TURKEY_WIDE')} icon={Globe} title="Tüm Türkiye" desc="Hariç tutma var" />
+              <DestCard active={destMode === 'INTERNATIONAL'} onClick={() => setDestMode('INTERNATIONAL')} icon={Globe} title="Yurtdışı" desc="Uluslararası" />
+            </div>
+
+            <div className="pt-2 animate-in fade-in slide-in-from-top-2 duration-300">
+              {destMode === 'SPECIFIC_LOCATION' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Varış İli</label>
+                    <select
+                      value={destinationCity}
+                      onChange={(e) => {
+                        setDestinationCity(e.target.value);
+                        setDestinationDistrict('');
+                      }}
+                      className={selectCls}
+                      required
+                    >
+                      <option value="">İl seçin…</option>
+                      {TURKEY_CITIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Varış İlçesi (Opsiyonel)</label>
+                    <select
+                      value={destinationDistrict}
+                      onChange={(e) => setDestinationDistrict(e.target.value)}
+                      className={selectCls}
+                      disabled={!destinationCity}
+                    >
+                      <option value="">Tüm İlçeler</option>
+                      {destinationCity && DISTRICTS[destinationCity]?.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               )}
-              {fieldErrors.destinationCity && (
-                <p className="text-xs text-red-600 mt-1.5 font-semibold">
-                  {fieldErrors.destinationCity}
-                </p>
+
+              {destMode === 'REGION' && (
+                <div>
+                  <label className={labelCls}>Hangi Bölge?</label>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.keys(TURKEY_REGIONS).map((r: string) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setDestinationRegion(r)}
+                        className={`px-4 py-2 rounded-xl text-sm font-bold border-2 transition-all ${
+                          destinationRegion === r
+                            ? 'bg-brand-dark border-brand-dark text-white shadow-sm'
+                            : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {destMode === 'TURKEY_WIDE' && (
+                <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Ban size={16} className="text-amber-600" />
+                    <p className="text-sm font-bold text-amber-900">Gitmek İstemediğiniz Bölgeler (Opsiyonel)</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.keys(TURKEY_REGIONS).map((r: string) => {
+                      const excluded = destinationExcludedRegions.includes(r);
+                      return (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => toggleExcludedRegion(r)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                            excluded
+                              ? 'bg-red-50 border-red-200 text-red-700'
+                              : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {excluded && <Ban size={10} className="inline mr-1" />}
+                          {r}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {destMode === 'INTERNATIONAL' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Gidilecek Ülke</label>
+                    <select
+                      value={destinationCountry}
+                      onChange={(e) => {
+                        setDestinationCountry(e.target.value);
+                        setDestinationCity('');
+                      }}
+                      className={selectCls}
+                      required
+                    >
+                      <option value="">Ülke seçin…</option>
+                      {COUNTRIES.filter((c: string) => c !== 'Türkiye').map((c: string) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Şehir (Opsiyonel)</label>
+                    <select
+                      value={destinationCity}
+                      onChange={(e) => setDestinationCity(e.target.value)}
+                      className={selectCls}
+                      disabled={!destinationCountry}
+                    >
+                      <option value="">Tüm Şehirler</option>
+                      {destinationCountry && COUNTRIES_WITH_CITIES[destinationCountry]?.map((c: string) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               )}
             </div>
           </div>
         </section>
 
-        {/* Opsiyonel - collapsible */}
+        {/* Opsiyonel Ek Bilgiler */}
         <section className="bg-white rounded-3xl border border-gray-100/80 shadow-sm overflow-hidden">
           <button
             type="button"
@@ -353,10 +450,7 @@ export function QuickRouteListingForm() {
             className="w-full px-5 py-4 flex items-center justify-between text-left hover:bg-gray-50/50 transition-colors"
           >
             <span className="text-sm font-bold text-gray-600">Ek bilgi (opsiyonel)</span>
-            <ChevronDown
-              size={18}
-              className={`text-gray-400 transition-transform ${showExtras ? 'rotate-180' : ''}`}
-            />
+            <ChevronDown size={18} className={`text-gray-400 transition-transform ${showExtras ? 'rotate-180' : ''}`} />
           </button>
           {showExtras && (
             <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-gray-50 pt-4">
@@ -395,17 +489,16 @@ export function QuickRouteListingForm() {
         </div>
       </form>
 
-      {/* Desktop sticky preview */}
       <aside className="hidden lg:block sticky top-24 space-y-4">
         <RoutePreviewCard
-          from={originCity || null}
+          from={originCity ? `${originCity} / ${originDistrict || 'Merkez'}` : null}
           to={previewTo}
           isTurkeyWide={destMode === 'TURKEY_WIDE'}
           plate={selectedVehicle?.plate}
           vehicleMeta={vehicleMeta}
         />
         <p className="text-[11px] text-gray-400 text-center leading-relaxed px-2">
-          İlan yayınlandığında yük verenler bu rotayı görür. Eşleşme önerileri yakında.
+          İlan yayınlandığında eşleşme önerileri en yakın zamanda sunulacaktır.
         </p>
       </aside>
     </div>
@@ -423,51 +516,22 @@ function StepLabel({ n, title }: { n: number; title: string }) {
   );
 }
 
-function DestCard({
-  active,
-  onClick,
-  icon: Icon,
-  title,
-  desc,
-  accent,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  title: string;
-  desc: string;
-  accent: 'dark' | 'orange';
-}) {
+function DestCard({ active, onClick, icon: Icon, title, desc }: { active: boolean; onClick: () => void; icon: React.ComponentType<{ size?: number; className?: string }>; title: string; desc: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`relative p-4 rounded-2xl border-2 text-left transition-all duration-200 overflow-hidden ${
+      className={`relative p-3 rounded-2xl border-2 text-center transition-all duration-200 ${
         active
-          ? accent === 'orange'
-            ? 'border-brand-orange bg-gradient-to-br from-orange-50 via-white to-white shadow-md shadow-orange-100/40'
-            : 'border-brand-dark bg-gradient-to-br from-slate-50 via-white to-white shadow-md shadow-slate-200/50'
-          : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm'
+          ? 'border-brand-orange bg-orange-50 shadow-sm'
+          : 'border-gray-100 bg-white hover:border-gray-200'
       }`}
     >
-      {active && (
-        <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-brand-orange text-white flex items-center justify-center">
-          <Check size={12} strokeWidth={3} />
-        </span>
-      )}
-      <div
-        className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${
-          active
-            ? accent === 'orange'
-              ? 'bg-brand-orange text-white'
-              : 'bg-brand-dark text-white'
-            : 'bg-gray-100 text-gray-400'
-        }`}
-      >
-        <Icon size={20} />
+      <div className={`mx-auto w-8 h-8 rounded-full flex items-center justify-center mb-2 ${active ? 'bg-brand-orange text-white' : 'bg-gray-100 text-gray-400'}`}>
+        <Icon size={16} />
       </div>
-      <p className="font-bold text-slate-900 text-sm pr-6">{title}</p>
-      <p className="text-[11px] text-gray-500 mt-1 leading-snug">{desc}</p>
+      <p className="font-bold text-slate-900 text-[11px] sm:text-xs leading-tight mb-0.5">{title}</p>
+      <p className="text-[9px] text-gray-500 leading-tight">{desc}</p>
     </button>
   );
 }
@@ -477,7 +541,7 @@ function SubmitButton({ saving, disabled }: { saving: boolean; disabled: boolean
     <button
       type="submit"
       disabled={disabled || saving}
-      className="w-full py-4 bg-gradient-to-r from-brand-orange to-orange-500 text-white font-black text-base rounded-2xl shadow-xl shadow-brand-orange/30 hover:shadow-brand-orange/40 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-45 disabled:shadow-none disabled:hover:scale-100 flex items-center justify-center gap-2.5 transition-all"
+      className="w-full py-4 bg-gradient-to-r from-brand-orange to-orange-500 text-white font-black text-base rounded-2xl shadow-xl shadow-brand-orange/30 hover:shadow-brand-orange/40 active:scale-[0.99] disabled:opacity-45 disabled:shadow-none disabled:hover:scale-100 flex items-center justify-center gap-2.5 transition-all"
     >
       {saving ? (
         <>
@@ -495,5 +559,4 @@ function SubmitButton({ saving, disabled }: { saving: boolean; disabled: boolean
 }
 
 const labelCls = 'block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2';
-const selectCls =
-  'w-full px-4 py-3.5 border border-gray-200 rounded-2xl text-sm font-semibold text-slate-800 outline-none focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 bg-white transition-shadow';
+const selectCls = 'w-full px-4 py-3.5 border border-gray-200 rounded-2xl text-sm font-semibold text-slate-800 outline-none focus:border-brand-orange focus:ring-4 focus:ring-brand-orange/10 bg-white transition-shadow appearance-none';

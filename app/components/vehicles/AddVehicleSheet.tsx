@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -11,6 +11,8 @@ import {
   Truck,
   Sparkles,
   FileText,
+  Ruler,
+  Package,
 } from 'lucide-react';
 import { apiFetch } from '@/lib/client-api';
 import { formatPlateInput } from '@/lib/vehicles/plate';
@@ -20,6 +22,8 @@ import {
   getYearOptions,
   POPULAR_BRANDS,
   VEHICLE_TYPE_OPTIONS,
+  BODY_TYPES,
+  VEHICLE_FEATURES,
 } from '@/lib/vehicles/constants';
 import type { Vehicle } from '@/app/types';
 import type { z } from 'zod';
@@ -33,7 +37,14 @@ export interface VehicleFormValues {
   model: string;
   year: string;
   type: VehicleTypeValue | '';
+  bodyType: string;
+  trailerType: string;
   capacity: string;
+  length: string;
+  width: string;
+  height: string;
+  volume: string;
+  features: string[];
 }
 
 const EMPTY_FORM: VehicleFormValues = {
@@ -42,13 +53,22 @@ const EMPTY_FORM: VehicleFormValues = {
   model: '',
   year: '',
   type: '',
+  bodyType: '',
+  trailerType: '',
   capacity: '',
+  length: '',
+  width: '',
+  height: '',
+  volume: '',
+  features: [],
 };
 
 const STEPS = [
   { id: 1, title: 'Kimlik', subtitle: 'Plaka ve marka' },
-  { id: 2, title: 'Özellikler', subtitle: 'Tip ve kapasite' },
-  { id: 3, title: 'Onay', subtitle: 'Önizleme' },
+  { id: 2, title: 'Tip', subtitle: 'Kasa ve dorse' },
+  { id: 3, title: 'Ölçüler', subtitle: 'Kapasite ve ebatlar' },
+  { id: 4, title: 'Donanım', subtitle: 'Ek özellikler' },
+  { id: 5, title: 'Onay', subtitle: 'Önizleme' },
 ] as const;
 
 interface AddVehicleSheetProps {
@@ -64,7 +84,7 @@ export function AddVehicleSheet({
   onSuccess,
   isOnboarding = false,
 }: AddVehicleSheetProps) {
-  const [step, setStep] = useState<1 | 2 | 3 | 'success'>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 'success'>(1);
   const [form, setForm] = useState<VehicleFormValues>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
@@ -108,7 +128,16 @@ export function AddVehicleSheet({
     });
   };
 
-  const validateStep = (s: 1 | 2 | 3): boolean => {
+  const toggleFeature = (feature: string) => {
+    setForm((f) => {
+      if (f.features.includes(feature)) {
+        return { ...f, features: f.features.filter((x) => x !== feature) };
+      }
+      return { ...f, features: [...f.features, feature] };
+    });
+  };
+
+  const validateStep = (s: number): boolean => {
     const err: Record<string, string> = {};
     if (s >= 1) {
       if (form.plate.replace(/\s/g, '').length < 5) err.plate = 'Geçerli plaka girin';
@@ -116,6 +145,8 @@ export function AddVehicleSheet({
     }
     if (s >= 2) {
       if (!form.type) err.type = 'Araç tipi seçin';
+    }
+    if (s >= 3) {
       const cap = parseFloat(form.capacity.replace(',', '.'));
       if (!cap || cap <= 0) err.capacity = 'Kapasite girin';
     }
@@ -126,19 +157,27 @@ export function AddVehicleSheet({
   const goNext = () => {
     if (step === 1 && validateStep(1)) setStep(2);
     else if (step === 2 && validateStep(2)) setStep(3);
+    else if (step === 3 && validateStep(3)) setStep(4);
+    else if (step === 4) setStep(5);
   };
 
   const goBack = () => {
     if (step === 2) setStep(1);
     else if (step === 3) setStep(2);
+    else if (step === 4) setStep(3);
+    else if (step === 5) setStep(4);
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(3)) return;
+    if (!validateStep(5)) return;
     setSaving(true);
     setGlobalError(null);
 
     const capacityNum = parseFloat(form.capacity.replace(',', '.'));
+    const lengthNum = form.length ? parseFloat(form.length.replace(',', '.')) : null;
+    const widthNum = form.width ? parseFloat(form.width.replace(',', '.')) : null;
+    const heightNum = form.height ? parseFloat(form.height.replace(',', '.')) : null;
+    const volumeNum = form.volume ? parseFloat(form.volume.replace(',', '.')) : null;
 
     const res = await apiFetch<Vehicle>('/api/vehicles', {
       method: 'POST',
@@ -150,6 +189,14 @@ export function AddVehicleSheet({
         type: form.type,
         capacity: capacityNum,
         capacityUnit: 'ton',
+        bodyType: form.bodyType || undefined,
+        trailerType: form.trailerType || undefined,
+        length: lengthNum,
+        width: widthNum,
+        height: heightNum,
+        volume: volumeNum,
+        features: form.features,
+        isActive: false, // Yeni araç belge yüklenene kadar inaktif kalır.
       }),
     });
 
@@ -164,7 +211,8 @@ export function AddVehicleSheet({
         });
         setFieldErrors(mapped);
         if (mapped.plate || mapped.brand) setStep(1);
-        else if (mapped.type || mapped.capacity) setStep(2);
+        else if (mapped.type) setStep(2);
+        else if (mapped.capacity) setStep(3);
       }
       return;
     }
@@ -177,7 +225,8 @@ export function AddVehicleSheet({
   };
 
   const typeLabel = selectedType?.label ?? '';
-  const capacityDisplay = form.capacity ? `${form.capacity} ton` : 'â€”';
+  const capacityDisplay = form.capacity ? `${form.capacity} ton` : '—';
+  const volumeDisplay = form.volume ? `${form.volume} m³` : '—';
 
   return (
     <div
@@ -227,10 +276,10 @@ export function AddVehicleSheet({
                 return (
                   <div key={s.id} className="flex-1">
                     <div
-                      className={`h-1 rounded-full transition-all ${done || active ? 'bg-brand-orange' : 'bg-white/20'}`}
+                      className={`h-1.5 rounded-full transition-all ${done || active ? 'bg-brand-orange' : 'bg-white/20'}`}
                     />
                     <p
-                      className={`text-[9px] font-bold mt-1 truncate ${active ? 'text-white' : 'text-white/40'}`}
+                      className={`text-[9px] font-bold mt-1.5 truncate ${active ? 'text-white' : 'text-white/40'}`}
                     >
                       {s.title}
                     </p>
@@ -242,7 +291,7 @@ export function AddVehicleSheet({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-5">
+        <div className="flex-1 overflow-y-auto px-5 py-5 custom-scrollbar">
           {globalError && (
             <div className="mb-4 flex items-start gap-2 p-3 bg-red-50 text-red-700 rounded-xl text-sm border border-red-100">
               <AlertCircle size={16} className="shrink-0 mt-0.5" />
@@ -251,7 +300,7 @@ export function AddVehicleSheet({
           )}
 
           {step === 1 && (
-            <div className="space-y-5">
+            <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
               <div>
                 <label className={labelCls}>Plaka *</label>
                 <input
@@ -305,11 +354,11 @@ export function AddVehicleSheet({
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>Model yÄ±lÄ±</label>
+                  <label className={labelCls}>Model yılı</label>
                   <select
                     value={form.year}
                     onChange={(e) => setField('year', e.target.value)}
-                    className={`${inputCls} appearance-none`}
+                    className={`${inputCls} appearance-none bg-white`}
                   >
                     <option value="">Seçiniz</option>
                     {years.map((y) => (
@@ -324,7 +373,7 @@ export function AddVehicleSheet({
           )}
 
           {step === 2 && (
-            <div className="space-y-5">
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
               <div>
                 <label className={labelCls}>Araç tipi *</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -363,7 +412,41 @@ export function AddVehicleSheet({
               </div>
 
               <div>
-                <label className={labelCls}>Yük kapasitesi (ton) *</label>
+                <label className={labelCls}>Kasa Tipi</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {BODY_TYPES.map((b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      onClick={() => setField('bodyType', b === form.bodyType ? '' : b)}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                        form.bodyType === b
+                          ? 'bg-brand-dark text-white border-brand-dark shadow-sm'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-300 bg-white'
+                      }`}
+                    >
+                      {b}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>Römork / Dorse Tipi (Opsiyonel)</label>
+                <input
+                  value={form.trailerType}
+                  onChange={(e) => setField('trailerType', e.target.value)}
+                  placeholder="Örn. Mega, Optima, Jumbo..."
+                  className={inputCls}
+                />
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div>
+                <label className={labelCls}>Maksimum Yük Kapasitesi (ton) *</label>
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {capacityPresets.map((c) => (
                     <button
@@ -372,8 +455,8 @@ export function AddVehicleSheet({
                       onClick={() => setField('capacity', String(c))}
                       className={`min-w-[3rem] px-3 py-2 text-sm font-bold rounded-xl border transition-colors ${
                         form.capacity === String(c)
-                          ? 'bg-brand-dark text-white border-brand-dark'
-                          : 'border-gray-200 text-gray-700 hover:border-brand-dark/30'
+                          ? 'bg-brand-orange text-white border-brand-orange shadow-sm'
+                          : 'border-gray-200 text-gray-700 hover:border-brand-orange/30 bg-white'
                       }`}
                     >
                       {c}
@@ -385,19 +468,124 @@ export function AddVehicleSheet({
                   inputMode="decimal"
                   value={form.capacity}
                   onChange={(e) => setField('capacity', e.target.value.replace(/[^\d.,]/g, ''))}
-                  placeholder="Özel kapasite"
+                  placeholder="Özel kapasite (örn: 15.5)"
                   className={`${inputCls} ${fieldErrors.capacity ? errCls : ''}`}
                 />
                 {fieldErrors.capacity && <p className={errTextCls}>{fieldErrors.capacity}</p>}
               </div>
+
+              <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                <div className="flex items-center gap-2 mb-4">
+                  <Ruler size={16} className="text-gray-400" />
+                  <h3 className="text-sm font-bold text-slate-800">Kasa Ölçüleri (Metre)</h3>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Uzunluk</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={form.length}
+                      onChange={(e) => setField('length', e.target.value.replace(/[^\d.,]/g, ''))}
+                      placeholder="13.6"
+                      className={`${inputCls} text-center`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Genişlik</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={form.width}
+                      onChange={(e) => setField('width', e.target.value.replace(/[^\d.,]/g, ''))}
+                      placeholder="2.45"
+                      className={`${inputCls} text-center`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1">Yükseklik</label>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={form.height}
+                      onChange={(e) => setField('height', e.target.value.replace(/[^\d.,]/g, ''))}
+                      placeholder="2.7"
+                      className={`${inputCls} text-center`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className={labelCls}>Hacim (m³)</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={form.volume}
+                    onChange={(e) => setField('volume', e.target.value.replace(/[^\d.,]/g, ''))}
+                    placeholder="Örn: 90"
+                    className={`${inputCls} pl-10`}
+                  />
+                  <Package size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                </div>
+              </div>
             </div>
           )}
 
-          {step === 3 && (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Bilgileri kontrol edin. Kaydettikten sonra araç belgelerini demo olarak iletebilirsiniz.
+          {step === 4 && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="flex items-center justify-between mb-2">
+                <label className={labelCls}>Donanım ve Ek Özellikler</label>
+                <span className="text-[10px] text-brand-orange font-bold px-2 py-0.5 bg-brand-orange/10 rounded-full">
+                  Opsiyonel
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mb-4">
+                Aracınızın sahip olduğu donanımları seçmeniz, yük eşleşmelerinde sizi bir adım öne çıkaracaktır.
               </p>
+              
+              <div className="grid grid-cols-2 gap-2">
+                {VEHICLE_FEATURES.map((feat) => {
+                  const selected = form.features.includes(feat);
+                  return (
+                    <button
+                      key={feat}
+                      type="button"
+                      onClick={() => toggleFeature(feat)}
+                      className={`flex items-start gap-2 p-3 rounded-xl border-2 text-left transition-all ${
+                        selected
+                          ? 'border-brand-dark bg-slate-50 shadow-sm'
+                          : 'border-gray-100 hover:border-gray-200 bg-white'
+                      }`}
+                    >
+                      <div className={`mt-0.5 shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                        selected ? 'bg-brand-dark border-brand-dark' : 'bg-white border-gray-300'
+                      }`}>
+                        {selected && <CheckCircle2 size={12} className="text-white" />}
+                      </div>
+                      <span className={`text-xs font-bold leading-tight ${selected ? 'text-brand-dark' : 'text-slate-600'}`}>
+                        {feat}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex gap-3">
+                <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={20} />
+                <div>
+                  <h4 className="text-sm font-bold text-amber-900">Belge Onayı Gerekiyor</h4>
+                  <p className="text-xs text-amber-800/80 mt-1 leading-relaxed">
+                    Aracınız kaydedilecek ancak <strong>ruhsat ve sigorta</strong> belgeleri sisteme yüklenip onaylanana kadar <strong>pasif (inaktif)</strong> olarak listelenecektir.
+                  </p>
+                </div>
+              </div>
+
               <VehiclePreviewCard
                 plate={form.plate}
                 brand={form.brand}
@@ -405,28 +593,45 @@ export function AddVehicleSheet({
                 year={form.year}
                 typeLabel={typeLabel}
                 capacityLabel={capacityDisplay}
+                bodyType={form.bodyType}
+                volume={volumeDisplay}
               />
+
+              {form.features.length > 0 && (
+                <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                  <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Seçili Donanımlar</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {form.features.map(f => (
+                      <span key={f} className="px-2 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold text-slate-700 shadow-sm">
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {step === 'success' && createdVehicle && (
-            <div className="text-center space-y-4 py-2">
-              <div className="w-16 h-16 rounded-2xl bg-green-50 flex items-center justify-center mx-auto">
-                <CheckCircle2 size={36} className="text-green-600" />
+            <div className="text-center space-y-4 py-2 animate-in zoom-in-95 duration-500">
+              <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center mx-auto shadow-inner">
+                <CheckCircle2 size={40} className="text-green-600" />
               </div>
               <div>
-                <p className="text-lg font-black text-slate-900">{createdVehicle.plate}</p>
-                <p className="text-sm text-gray-500">
+                <p className="text-xl font-black text-slate-900 tracking-tight">{createdVehicle.plate}</p>
+                <p className="text-sm text-gray-500 mt-1">
                   {createdVehicle.brand} {createdVehicle.model}
-                  {createdVehicle.year ? ` Â· ${createdVehicle.year}` : ''}
+                  {createdVehicle.year ? ` · ${createdVehicle.year}` : ''}
                 </p>
               </div>
-              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-left flex gap-2">
-                <FileText size={18} className="text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-900 leading-relaxed">
-                  Listede aracınızı açıp <strong>ruhsat</strong> ve <strong>sigorta</strong> için demo
-                  belge butonlarını kullanın.
-                </p>
+              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-left flex gap-3 mx-2">
+                <FileText size={24} className="text-blue-600 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="text-sm font-bold text-blue-900">Sonraki Adım: Belgeler</h4>
+                  <p className="text-xs text-blue-800/80 leading-relaxed mt-1">
+                    Aracınızın ilanlarda görünebilmesi için belgelerinin onaylanması gereklidir. Listeden aracınızı bulup demo belgeleri yükleyebilirsiniz.
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -438,9 +643,9 @@ export function AddVehicleSheet({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3.5 bg-brand-dark text-white font-bold text-sm rounded-xl hover:opacity-95 transition-opacity"
+              className="flex-1 py-3.5 bg-brand-dark text-white font-bold text-sm rounded-xl hover:opacity-95 transition-all shadow-lg shadow-brand-dark/20"
             >
-              Tamam
+              Araçlarım'a Dön
             </button>
           ) : (
             <>
@@ -449,26 +654,26 @@ export function AddVehicleSheet({
                   type="button"
                   onClick={goBack}
                   disabled={saving}
-                  className="px-4 py-3.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-white transition-colors disabled:opacity-50"
+                  className="px-4 py-3.5 border border-gray-200 bg-white rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
                 >
                   <ChevronLeft size={18} className="inline -ml-0.5" />
-                  Geri
+                  <span className="hidden sm:inline ml-1">Geri</span>
                 </button>
               ) : (
                 <button
                   type="button"
                   onClick={onClose}
                   disabled={saving}
-                  className="px-4 py-3.5 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-white"
+                  className="px-4 py-3.5 border border-gray-200 bg-white rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors"
                 >
-                  Ä°ptal
+                  İptal
                 </button>
               )}
-              {step < 3 ? (
+              {step < 5 ? (
                 <button
                   type="button"
                   onClick={goNext}
-                  className="flex-1 py-3.5 bg-brand-orange text-white font-bold text-sm rounded-xl hover:opacity-95 flex items-center justify-center gap-1 shadow-md shadow-brand-orange/20"
+                  className="flex-1 py-3.5 bg-brand-orange text-white font-bold text-sm rounded-xl hover:opacity-95 flex items-center justify-center gap-1 shadow-lg shadow-brand-orange/20 transition-all active:scale-[0.98]"
                 >
                   Devam
                   <ChevronRight size={18} />
@@ -478,7 +683,7 @@ export function AddVehicleSheet({
                   type="button"
                   onClick={handleSubmit}
                   disabled={saving}
-                  className="flex-1 py-3.5 bg-brand-dark text-white font-bold text-sm rounded-xl hover:opacity-95 flex items-center justify-center gap-2 disabled:opacity-60"
+                  className="flex-1 py-3.5 bg-brand-dark text-white font-bold text-sm rounded-xl hover:opacity-95 flex items-center justify-center gap-2 disabled:opacity-60 transition-all shadow-lg shadow-brand-dark/20"
                 >
                   {saving ? (
                     <>
@@ -488,7 +693,7 @@ export function AddVehicleSheet({
                   ) : (
                     <>
                       <Sparkles size={16} />
-                      AracÄ± kaydet
+                      Aracı Kaydet
                     </>
                   )}
                 </button>
@@ -497,6 +702,11 @@ export function AddVehicleSheet({
           )}
         </div>
       </div>
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+      `}} />
     </div>
   );
 }
@@ -508,6 +718,8 @@ function VehiclePreviewCard({
   year,
   typeLabel,
   capacityLabel,
+  bodyType,
+  volume,
 }: {
   plate: string;
   brand: string;
@@ -515,43 +727,45 @@ function VehiclePreviewCard({
   year: string;
   typeLabel: string;
   capacityLabel: string;
+  bodyType?: string;
+  volume?: string;
 }) {
   return (
-    <div className="rounded-2xl border-2 border-dashed border-gray-200 overflow-hidden">
-      <div className="bg-slate-900 text-white px-4 py-3 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-brand-orange flex items-center justify-center">
-          <Truck size={20} />
+    <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white px-5 py-4 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-xl bg-white/10 backdrop-blur border border-white/20 flex items-center justify-center shrink-0">
+          <Truck size={24} className="text-brand-orange" />
         </div>
         <div>
-          <p className="text-lg font-black tracking-wide">{plate || 'â€”'}</p>
-          <p className="text-xs text-white/70">
+          <p className="text-xl font-black tracking-widest">{plate || '—'}</p>
+          <p className="text-xs text-white/70 font-medium mt-0.5">
             {brand}
-            {model ? ` Â· ${model}` : ''}
-            {year ? ` Â· ${year}` : ''}
+            {model ? ` · ${model}` : ''}
+            {year ? ` · ${year}` : ''}
           </p>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-px bg-gray-100">
-        <PreviewCell label="Tip" value={typeLabel || 'â€”'} />
+        <PreviewCell label="Tip / Kasa" value={`${typeLabel || '—'}${bodyType ? ` (${bodyType})` : ''}`} />
         <PreviewCell label="Kapasite" value={capacityLabel} />
+        <PreviewCell label="Hacim" value={volume || '—'} />
+        <PreviewCell label="Durum" value="İnaktif (Belge Bekliyor)" valueClass="text-amber-600" />
       </div>
     </div>
   );
 }
 
-function PreviewCell({ label, value }: { label: string; value: string }) {
+function PreviewCell({ label, value, valueClass = 'text-slate-800' }: { label: string; value: string, valueClass?: string }) {
   return (
-    <div className="bg-white p-3">
-      <p className="text-[10px] font-bold text-gray-400 uppercase">{label}</p>
-      <p className="text-sm font-bold text-slate-800 mt-0.5">{value}</p>
+    <div className="bg-white p-3.5">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{label}</p>
+      <p className={`text-sm font-bold mt-1 ${valueClass}`}>{value}</p>
     </div>
   );
 }
 
-const labelCls = 'block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5';
+const labelCls = 'block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2 ml-1';
 const inputCls =
-  'w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-semibold text-slate-800 outline-none focus:border-brand-dark focus:ring-2 focus:ring-brand-dark/10 transition-all';
-const errCls = 'border-red-300 focus:border-red-400 focus:ring-red-100';
-const errTextCls = 'text-xs text-red-600 font-medium mt-1';
-
-
+  'w-full px-4 py-3.5 border-2 border-gray-100 rounded-xl text-sm font-bold text-slate-800 outline-none focus:border-brand-dark focus:ring-4 focus:ring-brand-dark/10 transition-all bg-gray-50/50 hover:bg-gray-50 focus:bg-white placeholder:text-gray-400 placeholder:font-medium';
+const errCls = 'border-red-300 focus:border-red-400 focus:ring-red-100 bg-red-50/30';
+const errTextCls = 'text-xs text-red-600 font-bold mt-1.5 ml-1';

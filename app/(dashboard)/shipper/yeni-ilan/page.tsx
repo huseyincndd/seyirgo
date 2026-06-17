@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, Truck, Home, Car, FileText, Ship, Construction, Warehouse,
   CheckCircle, ChevronRight, Upload, Shield, Send, Plus, Minus, Info,
-  MapPin, Calendar
+  MapPin, Calendar, Loader2
 } from 'lucide-react';
-import { CITIES, getDefaultDistricts, CUSTOMS_GATES } from '@/app/data/locations';
+import { TURKEY_CITIES, DISTRICTS, COUNTRIES, COUNTRIES_WITH_CITIES, CUSTOMS_GATES } from '@/app/data/locations';
 import { useSession } from '@/app/providers/SessionProvider';
+import { apiFetch } from '@/lib/client-api';
 
 // ─── KATEGORİLER (Yük Veren Perspektifi) ─────────────────────────────────────
 const CATEGORIES = [
@@ -102,7 +103,7 @@ type CategoryId = '1A' | '1B' | '1C' | '1D' | '1E' | '1F' | '1G';
 
 interface FormState {
   firma: string; yetkiliAdi: string; tcKimlik: string; mail: string;
-  telefon: string; faturaAdres: string; yukCinsi: string; yuklemeTarihi: string;
+  telefon: string; faturaAdres: string; yukCinsi: string; yuklemeTarihi: string; yuklemeTarihiTipi: string;
   kalkisUlke: string; kalkisSehir: string; kalkisIlce: string;
   cikisGumruk: string; kalkisPostaKod: string;
   varisUlke: string; varisSehir: string; varisIlce: string;
@@ -119,7 +120,7 @@ interface FormState {
 const initialForm: FormState = {
   firma: '', yetkiliAdi: '', tcKimlik: '',
   mail: '', telefon: '', faturaAdres: '',
-  yukCinsi: '', yuklemeTarihi: '',
+  yukCinsi: '', yuklemeTarihi: '', yuklemeTarihiTipi: 'exact',
   kalkisUlke: 'Türkiye', kalkisSehir: '', kalkisIlce: '', cikisGumruk: '', kalkisPostaKod: '',
   varisUlke: 'Türkiye', varisSehir: '', varisIlce: '', varisGumruk: '', varisPostaKod: '',
   tasitTipi: [], kasaTip: [], yukTipi: [], gonderiTipi: [], yuklemeTipi: [], tasitDiger: '',
@@ -212,10 +213,76 @@ export default function YeniIlanPage() {
   const toggleCheck = (field: 'tasitTipi' | 'kasaTip' | 'yukTipi' | 'gonderiTipi' | 'yuklemeTipi' | 'isiKontrol', val: string) =>
     setForm(prev => ({ ...prev, [field]: toggleArr(prev[field] as string[], val) }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!captcha) { alert('Lütfen robot olmadığınızı doğrulayın.'); return; }
-    console.log('Yük İlanı:', { category: selectedCat, ...form });
+    
+    if (!selectedCat) {
+      alert('Kategori seçmediniz');
+      return;
+    }
+
+    setSaving(true);
+    
+    const body = {
+      categoryId: selectedCat,
+      originCountry: form.kalkisUlke,
+      originCity: form.kalkisSehir,
+      originDistrict: form.kalkisIlce,
+      destinationCountry: form.varisUlke,
+      destinationCity: form.varisSehir,
+      destinationDistrict: form.varisIlce,
+      cargoDetails: {
+        firma: form.firma,
+        yetkiliAdi: form.yetkiliAdi,
+        tcKimlik: form.tcKimlik,
+        mail: form.mail,
+        telefon: form.telefon,
+        faturaAdres: form.faturaAdres,
+        yukCinsi: form.yukCinsi,
+        yuklemeTarihi: form.yuklemeTarihi,
+        yuklemeTarihiTipi: form.yuklemeTarihiTipi,
+        cikisGumruk: form.cikisGumruk,
+        kalkisPostaKod: form.kalkisPostaKod,
+        varisGumruk: form.varisGumruk,
+        varisPostaKod: form.varisPostaKod,
+        tasitTipi: form.tasitTipi,
+        kasaTip: form.kasaTip,
+        yukTipi: form.yukTipi,
+        gonderiTipi: form.gonderiTipi,
+        yuklemeTipi: form.yuklemeTipi,
+        tasitDiger: form.tasitDiger,
+        isiKontrol: form.isiKontrol,
+        isiSeviye: form.isiSeviye,
+        nem: form.nem,
+        havalandirma: form.havalandirma,
+        adet: form.adet,
+        agirlik: form.agirlik,
+        en: form.en,
+        boy: form.boy,
+        yukseklik: form.yukseklik,
+        toplamHacim: form.toplamHacim,
+        toplamAgirlik: form.toplamAgirlik,
+        fiyatBeklenti: form.fiyatBeklenti,
+        fiyatTipi: form.fiyatTipi,
+        ozet: form.ozet,
+      }
+    };
+
+    const res = await apiFetch('/api/shipper/listings', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+
+    setSaving(false);
+
+    if (!res.success) {
+      alert(res.error || 'İlan kaydedilemedi');
+      return;
+    }
+
     setSubmitted(true);
     setTimeout(() => router.push('/shipper/yukler'), 1800);
   };
@@ -383,7 +450,40 @@ export default function YeniIlanPage() {
                     placeholder={selectedCat === '1G' ? 'Mobilya, Tekstil, Makine...' : selectedCat === '1D' ? 'Evrak, Küçük Koli...' : 'Tekstil, Gıda, Makine...'} />
                 </FormRow>
                 <FormRow label={selectedCat === '1G' ? 'Depolama Tarihi' : 'Yükleme Tarihi'} required>
-                  <input type="date" value={form.yuklemeTarihi} onChange={e => set('yuklemeTarihi', e.target.value)} className={inputCls} />
+                  <div className="flex flex-col gap-2">
+                    <select value={form.yuklemeTarihiTipi} onChange={e => { set('yuklemeTarihiTipi', e.target.value); set('yuklemeTarihi', ''); }} className={`${inputCls} appearance-none`}>
+                      <option value="exact">Belirli Bir Tarih</option>
+                      <option value="month">Belirli Bir Ay / Aylar</option>
+                      <option value="weeks">Önümüzdeki Birkaç Hafta</option>
+                      <option value="months">Önümüzdeki Birkaç Ay</option>
+                      <option value="asap">En Kısa Zamanda (Acil)</option>
+                      <option value="flexible">Zamanı Belli Değil (Esnek)</option>
+                    </select>
+                    
+                    {form.yuklemeTarihiTipi === 'exact' && (
+                      <input type="date" value={form.yuklemeTarihi} onChange={e => set('yuklemeTarihi', e.target.value)} className={inputCls} />
+                    )}
+                    {form.yuklemeTarihiTipi === 'month' && (
+                      <input type="text" value={form.yuklemeTarihi} onChange={e => set('yuklemeTarihi', e.target.value)} className={inputCls} placeholder="Örn: Haziran, Temmuz, Mayıs-Haziran Arası" />
+                    )}
+                    {form.yuklemeTarihiTipi === 'weeks' && (
+                      <select value={form.yuklemeTarihi} onChange={e => set('yuklemeTarihi', e.target.value)} className={`${inputCls} appearance-none`}>
+                        <option value="">Seçiniz...</option>
+                        <option value="1_week">Önümüzdeki 1 Hafta İçinde</option>
+                        <option value="2_weeks">Önümüzdeki 2 Hafta İçinde</option>
+                        <option value="3_weeks">Önümüzdeki 3 Hafta İçinde</option>
+                      </select>
+                    )}
+                    {form.yuklemeTarihiTipi === 'months' && (
+                      <select value={form.yuklemeTarihi} onChange={e => set('yuklemeTarihi', e.target.value)} className={`${inputCls} appearance-none`}>
+                        <option value="">Seçiniz...</option>
+                        <option value="1_month">Önümüzdeki 1 Ay İçinde</option>
+                        <option value="2_months">Önümüzdeki 2 Ay İçinde</option>
+                        <option value="3_months">Önümüzdeki 3 Ay İçinde</option>
+                        <option value="6_months">Önümüzdeki 6 Ay İçinde</option>
+                      </select>
+                    )}
+                  </div>
                 </FormRow>
               </div>
             </div>
@@ -405,16 +505,19 @@ export default function YeniIlanPage() {
                     </div>
                     {selectedCat === '1G' ? 'Yükün Şu Anki Konumu' : 'Yükün Bulunduğu Yer (Yükleme)'}
                   </div>
-                  <input value={form.kalkisUlke} onChange={e => set('kalkisUlke', e.target.value)} className={inputCls} placeholder="Ülke" />
+                  <select value={form.kalkisUlke} onChange={e => { set('kalkisUlke', e.target.value); set('kalkisSehir', ''); set('kalkisIlce', ''); }} className={`${inputCls} appearance-none`} required>
+                    <option value="">Ülke Seçin</option>
+                    {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
                   
                   <select value={form.kalkisSehir} onChange={e => { set('kalkisSehir', e.target.value); set('kalkisIlce', ''); }} className={`${inputCls} appearance-none`} required>
                     <option value="">Şehir / İl Seçin</option>
-                    {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    {form.kalkisUlke === 'Türkiye' ? TURKEY_CITIES.map(c => <option key={c} value={c}>{c}</option>) : COUNTRIES_WITH_CITIES[form.kalkisUlke]?.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                   
-                  <select value={form.kalkisIlce} onChange={e => set('kalkisIlce', e.target.value)} className={`${inputCls} appearance-none`} disabled={!form.kalkisSehir}>
+                  <select value={form.kalkisIlce} onChange={e => set('kalkisIlce', e.target.value)} className={`${inputCls} appearance-none`} disabled={!form.kalkisSehir || form.kalkisUlke !== 'Türkiye'}>
                     <option value="">İlçe Seçin</option>
-                    {form.kalkisSehir && getDefaultDistricts(form.kalkisSehir).map(d => <option key={d} value={d}>{d}</option>)}
+                    {form.kalkisUlke === 'Türkiye' && form.kalkisSehir && DISTRICTS[form.kalkisSehir]?.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -435,22 +538,25 @@ export default function YeniIlanPage() {
                       </div>
                       Yükün Teslim Edileceği Yer
                     </div>
-                    <input value={form.varisUlke} onChange={e => set('varisUlke', e.target.value)} className={inputCls} placeholder="Ülke" />
-                    
-                    <select value={form.varisSehir} onChange={e => { set('varisSehir', e.target.value); set('varisIlce', ''); }} className={`${inputCls} appearance-none`}>
-                      <option value="">Şehir / İl Seçin</option>
-                      {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    <select value={form.varisUlke} onChange={e => { set('varisUlke', e.target.value); set('varisSehir', ''); set('varisIlce', ''); }} className={`${inputCls} appearance-none`} required>
+                      <option value="">Ülke Seçin</option>
+                      {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                     
-                    <select value={form.varisIlce} onChange={e => set('varisIlce', e.target.value)} className={`${inputCls} appearance-none`} disabled={!form.varisSehir}>
+                    <select value={form.varisSehir} onChange={e => { set('varisSehir', e.target.value); set('varisIlce', ''); }} className={`${inputCls} appearance-none`} required>
+                      <option value="">Şehir / İl Seçin</option>
+                      {form.varisUlke === 'Türkiye' ? TURKEY_CITIES.map(c => <option key={c} value={c}>{c}</option>) : COUNTRIES_WITH_CITIES[form.varisUlke]?.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    
+                    <select value={form.varisIlce} onChange={e => set('varisIlce', e.target.value)} className={`${inputCls} appearance-none`} disabled={!form.varisSehir || form.varisUlke !== 'Türkiye'}>
                       <option value="">İlçe Seçin</option>
-                      {form.varisSehir && getDefaultDistricts(form.varisSehir).map(d => <option key={d} value={d}>{d}</option>)}
+                      {form.varisUlke === 'Türkiye' && form.varisSehir && DISTRICTS[form.varisSehir]?.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
 
                     <div className="grid grid-cols-2 gap-3">
                       <select value={form.varisGumruk} onChange={e => set('varisGumruk', e.target.value)} className={`${inputCls} appearance-none`}>
                         <option value="">Varış Gümrüğü (Opsiyonel)</option>
-                        {CUSTOMS_GATES.map(g => <option key={g} value={g}>{g}</option>)}
+                          {CUSTOMS_GATES.map((g: string) => <option key={g} value={g}>{g}</option>)}
                       </select>
                       <input value={form.varisPostaKod} onChange={e => set('varisPostaKod', e.target.value)} className={inputCls} placeholder="Posta Kodu" />
                     </div>
@@ -466,13 +572,17 @@ export default function YeniIlanPage() {
                       </div>
                       Depo / Antrepo Tercihleri
                     </div>
-                    <select value={form.varisSehir} onChange={e => { set('varisSehir', e.target.value); set('varisIlce', ''); }} className={`${inputCls} appearance-none`}>
-                      <option value="">Tercih Edilen Şehir / Bölge</option>
-                      {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    <select value={form.varisUlke} onChange={e => { set('varisUlke', e.target.value); set('varisSehir', ''); set('varisIlce', ''); }} className={`${inputCls} appearance-none`} required>
+                      <option value="">Ülke Seçin</option>
+                      {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
-                    <select value={form.varisIlce} onChange={e => set('varisIlce', e.target.value)} className={`${inputCls} appearance-none`} disabled={!form.varisSehir}>
+                    <select value={form.varisSehir} onChange={e => { set('varisSehir', e.target.value); set('varisIlce', ''); }} className={`${inputCls} appearance-none`} required>
+                      <option value="">Tercih Edilen Şehir / Bölge</option>
+                      {form.varisUlke === 'Türkiye' ? TURKEY_CITIES.map(c => <option key={c} value={c}>{c}</option>) : COUNTRIES_WITH_CITIES[form.varisUlke]?.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                    <select value={form.varisIlce} onChange={e => set('varisIlce', e.target.value)} className={`${inputCls} appearance-none`} disabled={!form.varisSehir || form.varisUlke !== 'Türkiye'}>
                       <option value="">İlçe Seçin</option>
-                      {form.varisSehir && getDefaultDistricts(form.varisSehir).map(d => <option key={d} value={d}>{d}</option>)}
+                      {form.varisUlke === 'Türkiye' && form.varisSehir && DISTRICTS[form.varisSehir]?.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                     <input value={form.varisPostaKod} onChange={e => set('varisPostaKod', e.target.value)} className={inputCls} placeholder="Tahmini Süre (gün/ay)" />
                   </div>
